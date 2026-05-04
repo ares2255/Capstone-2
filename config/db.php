@@ -1,15 +1,22 @@
 <?php
-// REMOVE ANY LINE LIKE THIS:
-// include "../index.php";  <-- DELETE THIS IF IT EXISTS
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-$host = "localhost";
-$user = "root";
-$pass = "";
-$dbname = "netcafepos";
+$db_host = getenv('DB_HOST') ?: 'db.uvkvgyxpgromqpngqnlr.supabase.co';
+$db_name = getenv('DB_NAME') ?: 'postgres';
+$db_user = getenv('DB_USER') ?: 'postgres';
+$db_pass = getenv('DB_PASSWORD') ?: 'loucamaso123';
+$db_port = getenv('DB_PORT') ?: '5432';
 
-$conn = mysqli_connect($host, $user, $pass, $dbname);
-
-if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
+try {
+    $pdo = new PDO(
+        "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require",
+        $db_user,
+        $db_pass,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
+    );
+} catch (PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
 }
 ?>
