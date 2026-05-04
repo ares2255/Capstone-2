@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 include "config/db.php";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -21,5 +24,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         echo "Error inserting user.";
     }
+} else {
+    header("Location: register.php");
+    exit();
 }
 ?>
