@@ -2,227 +2,189 @@
 session_start();
 include "config/db.php";
 
-if(!isset($_SESSION['admin_username']) && !isset($_SESSION['username'])){
-    header("Location: index.php");
-    exit();
+if (!isset($_SESSION['admin_username']) && !isset($_SESSION['username'])) {
+    header("Location: index.php"); exit();
 }
 
-$is_admin = isset($_SESSION['admin_username']);
+$is_admin     = isset($_SESSION['admin_username']);
 $display_user = $is_admin ? $_SESSION['admin_username'] : $_SESSION['username'];
+$current_page = 'dashboard';
 
-// --- FETCH DATA ---
-$activeQuery = mysqli_query($conn,"SELECT COUNT(*) as total FROM pcs WHERE status='active'");
-$active = mysqli_fetch_assoc($activeQuery)['total'];
+$selected_date = isset($_GET['date']) && !empty($_GET['date']) ? $_GET['date'] : date('Y-m-d');
+$is_today      = ($selected_date === date('Y-m-d'));
+$date_label    = $is_today ? "Today" : date('F j, Y', strtotime($selected_date));
 
-$pcRevQuery = mysqli_query($conn,"SELECT SUM(cost) as revenue FROM sessions WHERE DATE(start_time)=CURDATE()");
-$pc_revenue = mysqli_fetch_assoc($pcRevQuery)['revenue'] ?? 0;
+try {
+    $active = $pdo->query("SELECT COUNT(*) FROM pcs WHERE status='active'")->fetchColumn();
 
-$printRevQuery = mysqli_query($conn,"SELECT SUM(price) as revenue FROM print_jobs WHERE DATE(created_at)=CURDATE()");
-$print_revenue = mysqli_fetch_assoc($printRevQuery)['revenue'] ?? 0;
+    $q = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE DATE(end_time)=:d");
+    $q->execute([':d'=>$selected_date]); $pc_revenue = $q->fetchColumn();
 
-$total_combined_revenue = $pc_revenue + $print_revenue;
+    $q = $pdo->prepare("SELECT COALESCE(SUM(price),0) FROM print_jobs WHERE DATE(created_at)=:d");
+    $q->execute([':d'=>$selected_date]); $print_revenue = $q->fetchColumn();
 
-$sessQuery = mysqli_query($conn,"SELECT COUNT(*) as total FROM sessions WHERE DATE(start_time)=CURDATE()");
-$sessions = mysqli_fetch_assoc($sessQuery)['total'];
+    $total_combined_revenue = $pc_revenue + $print_revenue;
 
-$printQuery = mysqli_query($conn,"SELECT COUNT(*) as total FROM print_jobs WHERE DATE(created_at)=CURDATE()");
-$prints = mysqli_fetch_assoc($printQuery)['total'];
+    $q = $pdo->prepare("SELECT COUNT(*) FROM sessions WHERE DATE(start_time)=:d");
+    $q->execute([':d'=>$selected_date]); $sessions = $q->fetchColumn();
+
+    $q = $pdo->prepare("SELECT COUNT(*) FROM print_jobs WHERE DATE(created_at)=:d");
+    $q->execute([':d'=>$selected_date]); $prints = $q->fetchColumn();
+
+    // PostgreSQL-compatible UNION query — no CONCAT with cast
+    $histQ = $pdo->prepare("
+        SELECT 'Session' as type, s.id as trans_id, p.name as description,
+               s.cost as price, s.end_time as date
+        FROM sessions s JOIN pcs p ON p.id = s.pc_id
+        WHERE DATE(s.end_time) = :d1
+           OR (s.end_time IS NULL AND DATE(s.start_time) = :d2)
+        UNION ALL
+        SELECT 'Print' as type, pj.id as trans_id,
+               pj.type || ' print - ' || pj.pages::text || ' pages' as description,
+               pj.price, pj.created_at as date
+        FROM print_jobs pj
+        WHERE DATE(pj.created_at) = :d3
+        ORDER BY date DESC
+    ");
+    $histQ->execute([':d1'=>$selected_date, ':d2'=>$selected_date, ':d3'=>$selected_date]);
+    $history   = $histQ->fetchAll();
+    $row_count = count($history);
+
+} catch (PDOException $e) {
+    die("<b>Query Error:</b> " . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Desktop | Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        html { overflow-y: scroll; scrollbar-gutter: stable; }
-        body { 
-            background-color: #050b14; 
-            background-image: linear-gradient(rgba(19, 39, 66, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(19, 39, 66, 0.3) 1px, transparent 1px); 
-            background-size: 50px 50px; 
-            color: white; 
-            font-family: 'Segoe UI', sans-serif; 
-            margin: 0; 
-            min-height: 100vh; 
-        }
-
-        /* HEADER */
-        .header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 30px; background-color: #0a0e14; 
-            border-bottom: 1px solid #1e293b; position: relative; 
-            height: 70px; box-sizing: border-box; 
-        }
-        .header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, #ff4d4d, transparent); }
-        
-        .logo-container { display: flex; align-items: center; gap: 10px; }
-        .logo-icon { color: #ff4d4d; font-size: 18px; border: 2px solid #ff4d4d; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
-        .logo-text { font-weight: bold; font-size: 20px; color: #38bdf8; }
-        .logo-text span { color: #ff4d4d; }
-
-        .nav-links { display: flex; gap: 35px; }
-        .nav-item { text-decoration: none; color: #94a3b8; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: 0.3s; border-bottom: 2px solid transparent; padding: 8px 0; }
-        .nav-item.active { color: #ff4d4d; border-bottom: 2px solid #ff4d4d; }
-        
-        .header-right { display: flex; align-items: center; gap: 15px; }
-        #systemClock { color: #38bdf8; font-family: monospace; background: rgba(56, 189, 248, 0.1); padding: 5px 12px; border-radius: 4px; font-weight: bold; font-size: 14px; }
-        .admin-badge { background: #1e293b; color: #94a3b8; padding: 6px 12px; border-radius: 5px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
-        .logout-btn { background: #ff4d4d; color: white; border: none; padding: 7px 16px; border-radius: 6px; cursor: pointer; text-decoration: none; font-weight: bold; font-size: 13px; }
-
-        /* WIDE CONTAINER WIDTH */
-        .main-container { max-width: 1400px; margin: 0 auto; padding: 40px; }
-        
-        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
-        .stat-card { background: rgba(10, 25, 47, 0.8); border: 1px solid #132742; padding: 25px; border-radius: 12px; }
-
-        /* EXPANSIVE AND BALANCED TABLE FIX */
-        .table-container { background: rgba(10, 25, 47, 0.8); border: 1px solid #132742; border-radius: 12px; padding: 30px; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; table-layout: fixed; }
-        th { text-align: left; color: #8aa0c5; border-bottom: 1px solid #132742; padding: 15px 0; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; }
-        td { padding: 20px 0; border-bottom: 1px solid #132742; color: #cbd5e1; vertical-align: middle; }
-        
-        /* Using percentages to enforce spacing like image_fc029f.png */
-        .col-type   { width: right; } /* Type label compact */
-        .col-desc   { width: auto; } /* Acts as flexible pusher space */
-        .col-amt    { width: 22%; text-align: left; }
-        .col-time   { width: 20%; text-align: left; }
-        .col-action { width: 10%; text-align: left; } 
-
-        .trash-btn { color: #ff4d4d; cursor: pointer; opacity: 0.7; transition: 0.2s; font-size: 18px; }
-        .trash-btn:hover { opacity: 1; transform: scale(1.1); }
-
-        /* MODAL */
-        .custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 2000; }
-        .modal-content { background: #0f172a; border: 1px solid #1e293b; padding: 30px; border-radius: 15px; text-align: center; max-width: 400px; width: 90%; }
-        .modal-icon { color: #ff4d4d; font-size: 50px; margin-bottom: 20px; }
-        .btn-cancel { background: #1e293b; color: #94a3b8; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; flex: 1; }
-        .btn-confirm { background: #ff4d4d; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; }
-    </style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Desktop | Dashboard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="includes/navbar.css">
+<style>
+html{overflow-y:scroll;scrollbar-gutter:stable;}
+body{background-color:#050b14;background-image:linear-gradient(rgba(19,39,66,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(19,39,66,.3) 1px,transparent 1px);background-size:50px 50px;color:white;font-family:'Segoe UI',sans-serif;margin:0;min-height:100vh;}
+.main-container{max-width:1400px;margin:0 auto;padding:36px 40px;}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:16px;}
+.page-header h2{margin:0;font-size:22px;}
+.page-header p{color:#8aa0c5;font-size:13px;margin:4px 0 0;}
+.date-bar{display:flex;align-items:center;gap:10px;background:rgba(10,25,47,.85);border:1px solid #132742;border-radius:10px;padding:10px 16px;}
+.date-bar label{color:#8aa0c5;font-size:12px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap;}
+.date-bar input[type="date"]{background:#050b14;border:1px solid #1e293b;color:white;padding:7px 12px;border-radius:7px;font-size:13px;cursor:pointer;outline:none;}
+.date-bar input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer;}
+.btn-view{background:#38bdf8;color:#000;border:none;padding:7px 16px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.btn-today{background:transparent;color:#8aa0c5;border:1px solid #1e293b;padding:7px 14px;border-radius:7px;font-size:12px;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px;}
+.date-banner{display:flex;align-items:center;gap:10px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:8px;padding:10px 16px;margin-bottom:24px;font-size:13px;color:#38bdf8;}
+.date-banner.today{background:rgba(46,204,113,.07);border-color:rgba(46,204,113,.2);color:#2ecc71;}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:36px;}
+.stat-card{background:rgba(10,25,47,.85);border:1px solid #132742;padding:24px;border-radius:12px;}
+.stat-card h2{margin:0 0 6px;font-size:28px;}
+.stat-card small{color:#8aa0c5;text-transform:uppercase;font-size:10px;letter-spacing:1px;}
+.table-container{background:rgba(10,25,47,.85);border:1px solid #132742;border-radius:12px;padding:28px;}
+.table-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+.table-header h3{margin:0;font-size:15px;color:#38bdf8;}
+.record-count{background:#132742;color:#8aa0c5;font-size:11px;padding:4px 10px;border-radius:20px;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th{text-align:left;color:#8aa0c5;border-bottom:1px solid #132742;padding:12px 0;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:1.5px;}
+td{padding:18px 0;border-bottom:1px solid #132742;color:#cbd5e1;vertical-align:middle;}
+td:first-child,th:first-child{padding-left:4px;width:90px;}
+td:last-child,th:last-child{width:60px;text-align:center;}
+.no-records{text-align:center;padding:50px 0;color:#4a5f7a;font-size:14px;}
+.no-records i{font-size:36px;display:block;margin-bottom:12px;}
+.trash-btn{color:#ff4d4d;cursor:pointer;opacity:.7;transition:.2s;font-size:16px;}
+.trash-btn:hover{opacity:1;transform:scale(1.15);}
+.custom-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;z-index:2000;}
+.modal-content{background:#0f172a;border:1px solid #1e293b;padding:30px;border-radius:15px;text-align:center;max-width:400px;width:90%;}
+.modal-icon{color:#ff4d4d;font-size:48px;margin-bottom:18px;}
+.btn-cancel{background:#1e293b;color:#94a3b8;border:none;padding:12px 25px;border-radius:8px;cursor:pointer;flex:1;}
+.btn-confirm{background:#ff4d4d;color:white;border:none;padding:12px 25px;border-radius:8px;cursor:pointer;font-weight:bold;flex:1;}
+</style>
 </head>
 <body>
+<?php include 'includes/navbar.php'; ?>
+<div class="main-container">
 
-    <header class="header">
-        <div class="logo-container">
-            <div class="logo-icon"><i class="fas fa-chart-pie"></i></div>
-            <div class="logo-text">The<span>Desktop</span></div>
+    <div class="page-header">
+        <div>
+            <h2><?= $is_admin ? 'System Overview' : 'Staff Dashboard' ?></h2>
+            <p>Sales history and transaction logs</p>
         </div>
-        <nav class="nav-links">
-            <a href="counter.php" class="nav-item"><i class="fas fa-list-ul"></i> Counter</a>
-            <a href="printing.php" class="nav-item"><i class="fas fa-print"></i> Printing</a>
-            <a href="dashboard.php" class="nav-item active"><i class="fas fa-chart-pie"></i> Dashboard</a>
-            <a href="settings.php" class="nav-item"><i class="fas fa-cog"></i> Settings</a>
-        </nav>
-        <div class="header-right">
-            <div id="systemClock">00:00:00 AM</div>
-            <div class="admin-badge"><i class="fas fa-user"></i> <?php echo htmlspecialchars($display_user); ?></div>
-            <a href="logout.php" class="logout-btn">Logout</a>
-        </div>
-    </header>
-
-    <div class="main-container">
-        <div style="margin-bottom: 30px;">
-            <h2 style="margin: 0; font-size: 24px;"><?php echo $is_admin ? 'System Overview' : 'Staff Dashboard'; ?></h2>
-            <p style="color: #8aa0c5; font-size: 14px;">Real-time revenue and transaction logs</p>
-        </div>
-
-        <div class="stat-grid">
-            <div class="stat-card">
-                <h2 style="color: #2ecc71; margin: 0;">₱<?php echo number_format($total_combined_revenue, 2); ?></h2>
-                <small style="color: #8aa0c5; text-transform: uppercase; font-size: 10px; letter-spacing: 1px;">Today's Revenue</small>
+        <form method="GET" action="dashboard.php">
+            <div class="date-bar">
+                <label><i class="fas fa-calendar-alt"></i>&nbsp; View Date</label>
+                <input type="date" name="date" value="<?= htmlspecialchars($selected_date) ?>" max="<?= date('Y-m-d') ?>">
+                <button type="submit" class="btn-view"><i class="fas fa-search"></i> View</button>
+                <?php if(!$is_today): ?>
+                    <a href="dashboard.php" class="btn-today"><i class="fas fa-undo"></i> Today</a>
+                <?php endif; ?>
             </div>
-            <div class="stat-card">
-                <h2 style="margin: 0; color: #f1c40f;"><?php echo $sessions; ?></h2>
-                <small style="color: #8aa0c5; text-transform: uppercase; font-size: 10px; letter-spacing: 1px;">Sessions Today</small>
-            </div>
-            <div class="stat-card">
-                <h2 style="margin: 0; color: #a855f7;"><?php echo $prints; ?></h2>
-                <small style="color: #8aa0c5; text-transform: uppercase; font-size: 10px; letter-spacing: 1px;">Print Jobs Today</small>
-            </div>
-            <div class="stat-card">
-                <h2 style="color: #1fb6ff; margin: 0;"><?php echo $active; ?></h2>
-                <small style="color: #8aa0c5; text-transform: uppercase; font-size: 10px; letter-spacing: 1px;">Active PCs</small>
-            </div>
-        </div>
-
-        <div class="table-container">
-            <h3 style="margin-top: 0; font-size: 16px; margin-bottom: 25px; color: #38bdf8;">Recent Transaction History</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th class="col-type">TYPE</th>
-                        <th class="col-desc">DESCRIPTION</th>
-                        <th class="col-amt">AMOUNT</th>
-                        <th class="col-time">TIME</th>
-                        <th class="col-action">ACTION</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    $history = mysqli_query($conn,"
-                        (SELECT 'Session' as type, sessions.id as trans_id, pcs.name as description, sessions.cost as price, sessions.end_time as date
-                        FROM sessions JOIN pcs ON pcs.id=sessions.pc_id
-                        WHERE DATE(sessions.end_time) = CURDATE() OR sessions.end_time IS NULL)
-                        UNION
-                        (SELECT 'Print' as type, id as trans_id, CONCAT(type,' print ',pages,' pages') as description, price, created_at as date 
-                        FROM print_jobs
-                        WHERE DATE(created_at) = CURDATE())
-                        ORDER BY date DESC LIMIT 10
-                    ");
-                    while($row = mysqli_fetch_assoc($history)): ?>
-                    <tr>
-                        <td class="col-type">
-                            <span style="border: 1px solid currentColor; padding: 4px 10px; border-radius: 6px; font-size: 11px; color: <?php echo $row['type'] == 'Session' ? '#38bdf8' : '#a855f7'; ?>; background: transparent;">
-                                <?php echo $row['type']; ?>
-                            </span>
-                        </td>
-                        <td class="col-desc" style="color: #cbd5e1;"><?php echo $row['description']; ?></td>
-                        <td class="col-amt" style="color: #2ecc71; font-weight: bold; font-family: monospace; font-size: 17px;">
-                            ₱<?php echo number_format($row['price'], 2); ?>
-                        </td>
-                        <td class="col-time" style="color: #8aa0c5; font-size: 13px;">
-                            <?php echo $row['date'] ? date('g:i A', strtotime($row['date'])) : '<span style="color:#ff4d4d">Active</span>'; ?>
-                        </td>
-                        <td class="col-action">
-                            <i class="fas fa-trash-alt trash-btn" onclick="confirmVoid('<?php echo $row['trans_id']; ?>', '<?php echo $row['type']; ?>')"></i>
-                        </td>
-                    </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-        </div>
+        </form>
     </div>
 
-    <div id="voidModal" class="custom-modal" style="display:none;">
-        <div class="modal-content">
-            <div class="modal-icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <h2>Void Transaction?</h2>
-            <p style="color: #94a3b8; font-size: 14px;">This action will remove the record and deduct it from your daily revenue.</p>
-            <div style="display: flex; gap: 15px; margin-top: 25px;">
-                <button class="btn-cancel" onclick="closeVoidModal()">Cancel</button>
-                <button class="btn-confirm" id="confirmVoidBtn">Yes, Void it</button>
-            </div>
-        </div>
+    <div class="date-banner <?= $is_today ? 'today' : '' ?>">
+        <i class="fas fa-<?= $is_today ? 'circle' : 'calendar-day' ?>"></i>
+        <?php if($is_today): ?>
+            Showing <strong>today's</strong> transactions — <?= date('F j, Y') ?>
+        <?php else: ?>
+            Showing transactions for <strong><?= $date_label ?></strong>
+        <?php endif; ?>
     </div>
 
-    <script>
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('systemClock').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
+    <div class="stat-grid">
+        <div class="stat-card"><h2 style="color:#2ecc71;">₱<?= number_format($total_combined_revenue,2) ?></h2><small><?= $date_label ?>'s Revenue</small></div>
+        <div class="stat-card"><h2 style="color:#f1c40f;"><?= $sessions ?></h2><small>Sessions</small></div>
+        <div class="stat-card"><h2 style="color:#a855f7;"><?= $prints ?></h2><small>Print Jobs</small></div>
+        <div class="stat-card"><h2 style="color:#1fb6ff;"><?= $active ?></h2><small>Active PCs Now</small></div>
+    </div>
 
-        function confirmVoid(id, type) {
-            document.getElementById('voidModal').style.display = 'flex';
-            document.getElementById('confirmVoidBtn').onclick = function() {
-                window.location.href = "process_void.php?id=" + id + "&type=" + type;
-            };
-        }
+    <div class="table-container">
+        <div class="table-header">
+            <h3><i class="fas fa-receipt"></i> Transaction History — <?= $date_label ?></h3>
+            <span class="record-count"><?= $row_count ?> record<?= $row_count != 1 ? 's' : '' ?></span>
+        </div>
+        <?php if($row_count === 0): ?>
+            <div class="no-records"><i class="fas fa-folder-open"></i><br>No transactions found for <?= $date_label ?>.</div>
+        <?php else: ?>
+        <table>
+            <thead><tr><th>TYPE</th><th>DESCRIPTION</th><th>AMOUNT</th><th>TIME</th><th>DEL</th></tr></thead>
+            <tbody>
+            <?php foreach($history as $row): ?>
+            <tr>
+                <td><span style="border:1px solid currentColor;padding:3px 9px;border-radius:6px;font-size:11px;color:<?= $row['type']==='Session'?'#38bdf8':'#a855f7' ?>;"><?= $row['type'] ?></span></td>
+                <td><?= htmlspecialchars($row['description']) ?></td>
+                <td style="color:#2ecc71;font-weight:bold;font-family:monospace;font-size:16px;">₱<?= number_format($row['price'],2) ?></td>
+                <td style="color:#8aa0c5;font-size:13px;"><?= $row['date'] ? date('g:i A',strtotime($row['date'])) : '<span style="color:#ff4d4d">Active</span>' ?></td>
+                <td style="text-align:center;">
+                    <?php if($row['date']): ?>
+                    <i class="fas fa-trash-alt trash-btn" onclick="confirmVoid('<?= $row['trans_id'] ?>','<?= $row['type'] ?>')"></i>
+                    <?php else: ?><span style="color:#4a5f7a">—</span><?php endif; ?>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        <?php endif; ?>
+    </div>
+</div>
 
-        function closeVoidModal() { document.getElementById('voidModal').style.display = 'none'; }
-        window.onclick = function(event) { if (event.target == document.getElementById('voidModal')) closeVoidModal(); }
-        setTimeout(() => { location.reload(); }, 30000);
-    </script>
-</body>
-</html>
+<div id="voidModal" class="custom-modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <h2>Void Transaction?</h2>
+        <p style="color:#94a3b8;font-size:14px;">This will remove the record and deduct it from daily revenue.</p>
+        <div style="display:flex;gap:15px;margin-top:22px;">
+            <button class="btn-cancel" onclick="closeVoidModal()">Cancel</button>
+            <button class="btn-confirm" id="confirmVoidBtn">Yes, Void it</button>
+        </div>
+    </div>
+</div>
+<script>
+function confirmVoid(id,type){
+    document.getElementById('voidModal').style.display='flex';
+    document.getElementById('confirmVoidBtn').onclick=function(){window.location.href='process_void.php?id='+id+'&type='+type;};
+}
+function closeVoidModal(){document.getElementById('voidModal').style.display='none';}
+window.onclick=function(e){if(e.target==document.getElementById('voidModal'))closeVoidModal();}
+<?php if($is_today): ?>setTimeout(()=>{location.reload();},30000);<?php endif; ?>
+</script>
+</body></html>
