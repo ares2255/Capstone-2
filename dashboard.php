@@ -152,7 +152,7 @@ td:last-child,th:last-child{width:60px;text-align:center;}
             <tr>
                 <td><span style="border:1px solid currentColor;padding:3px 9px;border-radius:6px;font-size:11px;color:<?= $row['type']==='Session'?'#38bdf8':'#a855f7' ?>;"><?= $row['type'] ?></span></td>
                 <td><?= htmlspecialchars($row['description']) ?></td>
-                <td style="color:#2ecc71;font-weight:bold;font-family:monospace;font-size:16px;">₱<?= number_format($row['price'],2) ?></td>
+                <td style="color:#2ecc71;font-weight:bold;font-family:monospace;font-size:16px;">₱<?= number_format((float)($row['price'] ?? 0),2) ?></td>
                 <td style="color:#8aa0c5;font-size:13px;"><?= $row['date'] ? date('g:i A',strtotime($row['date'])) : '<span style="color:#ff4d4d">Active</span>' ?></td>
                 <td style="text-align:center;">
                     <?php if($row['date']): ?>
