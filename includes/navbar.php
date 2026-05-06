@@ -19,8 +19,11 @@ $current = basename($_SERVER['PHP_SELF']);
         <a href="settings.php" class="<?= $current=='settings.php'?'active':'' ?>">
             <i class="fas fa-cog"></i> Settings
         </a>
-        <a href="analytics.php" class="<?= $current=='analytics.php'?'active':'' ?>" style="color:#2ecc71;">
+        <a href="analytics.php" class="<?= $current=='analytics.php'?'active':'' ?>" style="<?= $current=='analytics.php'?'':'color:#2ecc71;' ?>">
             <i class="fas fa-chart-line"></i> Analytics
+        </a>
+        <a href="pos.php" class="<?= $current=='pos.php'?'active':'' ?>" style="<?= $current=='pos.php'?'':'color:#f1c40f;' ?>">
+            <i class="fas fa-cash-register"></i> POS
         </a>
     </div>
     <div class="nav-right">
