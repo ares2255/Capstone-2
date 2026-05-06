@@ -19,6 +19,9 @@ $current = basename($_SERVER['PHP_SELF']);
         <a href="settings.php" class="<?= $current=='settings.php'?'active':'' ?>">
             <i class="fas fa-cog"></i> Settings
         </a>
+        <a href="analytics.php" class="<?= $current=='analytics.php'?'active':'' ?>" style="color:#2ecc71;">
+            <i class="fas fa-chart-line"></i> Analytics
+        </a>
     </div>
     <div class="nav-right">
         <span class="nav-time" id="navTime"></span>
