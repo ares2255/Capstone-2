@@ -5,6 +5,7 @@ date_default_timezone_set('Asia/Manila');
 
 if (isset($_GET['id'])) {
     $pc_id = intval($_GET['id']);
+    $redirect = $_GET['redirect'] ?? null;
     $end_time = date("Y-m-d H:i:s");
 
     $rates = $pdo->query("SELECT * FROM settings WHERE id = 1")->fetch();
@@ -42,6 +43,12 @@ if (isset($_GET['id'])) {
 
         $pdo->prepare("UPDATE pcs SET status = 'available' WHERE id = :id")
             ->execute([':id' => $pc_id]);
+
+        // If customer ended their own session, redirect back to session display
+        if ($redirect) {
+            header("Location: " . $redirect);
+            exit();
+        }
 
         header("Location: counter.php?status=ended&paid=$cost&pc=$pc_name");
         exit();
