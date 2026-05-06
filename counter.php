@@ -97,6 +97,11 @@ body{background-color:#050b14;background-image:linear-gradient(rgba(19,39,66,.3)
             <?php else: ?><div class="pc-timer"></div><?php endif; ?>
             <?php if($isActive): ?>
                 <button class="btn-end" onclick="openEndModal(<?= $pc['id'] ?>,'<?= htmlspecialchars($pc['name']) ?>')"><i class="fas fa-stop-circle"></i> End Session</button>
+            <div style="margin-top:8px;">
+                <button onclick="copySessionUrl('<?= htmlspecialchars($pc['name']) ?>')" style="background:#132742;border:1px solid #1e3a5f;color:#8aa0c5;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;width:100%;">
+                    <i class="fas fa-link"></i> Copy Session URL
+                </button>
+            </div>
             <?php else: ?>
                 <button class="btn-start" onclick="openStartModal(<?= $pc['id'] ?>,'<?= htmlspecialchars($pc['name']) ?>')"><i class="fas fa-play-circle"></i> Start</button>
             <?php endif; ?>
@@ -149,6 +154,10 @@ function selectTime(btn,mins){selectedMins=mins;document.querySelectorAll('.time
 function confirmStart(){if(selectedMins===null){alert('Please select a time package.');return;}window.location.href='start_session.php?id='+currentPcId+'&mins='+selectedMins;}
 function openEndModal(id,name){currentPcId=id;document.getElementById('endModalTitle').textContent='End session for '+name+'?';document.getElementById('endModal').style.display='flex';document.getElementById('confirmEndBtn').onclick=()=>{window.location.href='end_session.php?id='+currentPcId;};}
 function closeEndModal(){document.getElementById('endModal').style.display='none';}
+function copySessionUrl(pcName){
+    const url = window.location.origin + '/session_display.php?pc=' + encodeURIComponent(pcName);
+    navigator.clipboard.writeText(url).then(()=>showToast('Session URL copied! Open on PC: '+pcName,'info'));
+}
 ['startModal','endModal'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target.id===id)document.getElementById(id).style.display='none';});});
 const p=new URLSearchParams(location.search);
 if(p.get('status')==='started'){showToast('Session started!','info');history.replaceState({},'',location.pathname);}
