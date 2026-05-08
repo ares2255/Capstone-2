@@ -39,6 +39,16 @@ body{background-color:#050b14;background-image:linear-gradient(rgba(19,39,66,.3)
 .pc-card{background:rgba(10,25,47,.85);border:1px solid #1a3352;border-radius:12px;padding:20px 16px;text-align:center;transition:transform .2s,border-color .2s,box-shadow .2s;}
 .pc-card:hover{transform:translateY(-3px);border-color:#38bdf8;box-shadow:0 8px 24px rgba(56,189,248,.1);}
 .pc-card.in-use{border-color:#ff8c00;}.pc-card.in-use:hover{border-color:#ffae00;}
+.pc-card.overtime{border-color:#ff0000 !important;box-shadow:0 0 20px rgba(255,0,0,.5) !important;animation:overtimePulse 1s infinite;}
+.pc-card.overtime .pc-icon{color:#ff0000 !important;}
+.status-overtime{background:rgba(255,0,0,.2);color:#ff4d4d;animation:blink .7s infinite;}
+@keyframes overtimePulse{0%,100%{box-shadow:0 0 20px rgba(255,0,0,.5);}50%{box-shadow:0 0 40px rgba(255,0,0,.9);}}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.pc-timer.overtime-text{color:#ff4d4d !important;font-weight:700;font-size:13px;}
+.overtime-banner{display:none;background:#ff0000;color:white;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;}
+.overtime-banner.show{display:block;animation:blink .7s infinite;}
+.alarm-bar{display:none;position:fixed;top:60px;left:0;right:0;background:#ff0000;color:white;padding:10px 20px;text-align:center;font-weight:700;font-size:14px;z-index:500;animation:blink .7s infinite;}
+.alarm-bar.show{display:block;}
 .pc-icon{font-size:32px;margin-bottom:10px;color:#38bdf8;}.pc-card.in-use .pc-icon{color:#ffae00;}
 .pc-name{font-size:14px;font-weight:700;margin-bottom:8px;}
 .pc-status{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:12px;}
@@ -82,18 +92,20 @@ body{background-color:#050b14;background-image:linear-gradient(rgba(19,39,66,.3)
             $isActive  = $pc['status'] === 'active';
             $startTime = '';
             if ($isActive) {
-                $sq = $pdo->prepare("SELECT start_time FROM sessions WHERE pc_id=:id AND end_time IS NULL ORDER BY id DESC LIMIT 1");
+                $sq = $pdo->prepare("SELECT start_time, time_limit FROM sessions WHERE pc_id=:id AND end_time IS NULL ORDER BY id DESC LIMIT 1");
                 $sq->execute([':id' => $pc['id']]);
                 $sr = $sq->fetch();
                 $startTime = $sr['start_time'] ?? '';
+                $timeLimit = $sr['time_limit'] ?? null;
             }
         ?>
-        <div class="pc-card <?= $isActive ? 'in-use' : '' ?>">
+        <div class="pc-card <?= $isActive ? 'in-use' : '' ?>" id="pc-card-<?= $pc['id'] ?>">
             <div class="pc-icon"><i class="fas fa-desktop"></i></div>
             <div class="pc-name"><?= htmlspecialchars($pc['name']) ?></div>
             <span class="pc-status <?= $isActive ? 'status-active' : 'status-available' ?>"><?= $isActive ? 'In Use' : 'Available' ?></span>
             <?php if($isActive && $startTime): ?>
-            <div class="pc-timer" id="timer-<?= $pc['id'] ?>" data-start="<?= $startTime ?>">--:--</div>
+            <div class="overtime-banner" id="overtime-banner-<?= $pc['id'] ?>">⚠ OVERTIME</div>
+            <div class="pc-timer" id="timer-<?= $pc['id'] ?>" data-start="<?= $startTime ?>" data-limit="<?= $timeLimit ?>">--:--</div>
             <?php else: ?><div class="pc-timer"></div><?php endif; ?>
             <?php if($isActive): ?>
                 <button class="btn-end" onclick="openEndModal(<?= $pc['id'] ?>,'<?= htmlspecialchars($pc['name']) ?>')"><i class="fas fa-stop-circle"></i> End Session</button>
@@ -110,6 +122,9 @@ body{background-color:#050b14;background-image:linear-gradient(rgba(19,39,66,.3)
     </div>
 </div>
 
+<div class="alarm-bar" id="alarmBar">
+    <i class="fas fa-bell"></i> &nbsp; OVERTIME ALERT — Some PCs have exceeded their time limit! &nbsp; <i class="fas fa-bell"></i>
+</div>
 <div id="startModal" class="modal-overlay">
     <div class="modal-box">
         <h3 id="startModalTitle">Start Session</h3>
@@ -142,11 +157,81 @@ body{background-color:#050b14;background-image:linear-gradient(rgba(19,39,66,.3)
 </div>
 
 <script>
+// Overtime alert audio
+let alarmPlaying = false;
+let audioCtx = null;
+function playAlarm() {
+    if (alarmPlaying) return;
+    alarmPlaying = true;
+    function beep() {
+        if (!alarmPlaying) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.connect(g); g.connect(audioCtx.destination);
+        o.type = 'square'; o.frequency.value = 880;
+        g.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+        o.start(); o.stop(audioCtx.currentTime + 0.4);
+        setTimeout(beep, 2000);
+    }
+    beep();
+}
+
+let anyOvertime = false;
+
 document.querySelectorAll('[id^="timer-"]').forEach(el=>{
-    const start=new Date(el.dataset.start.replace(' ','T'));
-    function tick(){const d=Math.floor((Date.now()-start)/1000);el.textContent=String(Math.floor(d/3600)).padStart(2,'0')+':'+String(Math.floor((d%3600)/60)).padStart(2,'0')+':'+String(d%60).padStart(2,'0');}
-    tick();setInterval(tick,1000);
+    const start = new Date(el.dataset.start.replace(' ','T'));
+    const limitMins = el.dataset.limit ? parseInt(el.dataset.limit) : null;
+    const pcId = el.id.replace('timer-','');
+    const card = document.getElementById('pc-card-'+pcId);
+    const banner = document.getElementById('overtime-banner-'+pcId);
+    const statusBadge = card ? card.querySelector('.pc-status') : null;
+
+    function tick(){
+        const elapsed = Math.floor((Date.now()-start)/1000);
+        const h = Math.floor(elapsed/3600);
+        const m = Math.floor((elapsed%3600)/60);
+        const s = elapsed%60;
+        const pad = n=>String(n).padStart(2,'0');
+
+        if (limitMins && elapsed >= limitMins * 60) {
+            // OVERTIME
+            const over = elapsed - (limitMins * 60);
+            const oh = Math.floor(over/3600);
+            const om = Math.floor((over%3600)/60);
+            const os = over%60;
+            el.textContent = 'OVERTIME +' + pad(oh)+':'+pad(om)+':'+pad(os);
+            el.classList.add('overtime-text');
+            if(card){ card.classList.add('overtime'); card.classList.remove('in-use'); }
+            if(banner){ banner.classList.add('show'); }
+            if(statusBadge){ statusBadge.className='pc-status status-overtime'; statusBadge.textContent='⚠ OVERTIME'; }
+            anyOvertime = true;
+        } else if(limitMins) {
+            const remaining = (limitMins*60) - elapsed;
+            const rh=Math.floor(remaining/3600);
+            const rm=Math.floor((remaining%3600)/60);
+            const rs=remaining%60;
+            el.textContent = pad(rh)+':'+pad(rm)+':'+pad(rs)+' left';
+            // Warning colors
+            const pct = remaining/(limitMins*60);
+            if(pct<=0.1) el.style.color='#ff4d4d';
+            else if(pct<=0.25) el.style.color='#f1c40f';
+            else el.style.color='#2ecc71';
+        } else {
+            el.textContent = pad(h)+':'+pad(m)+':'+pad(s)+' elapsed';
+        }
+    }
+    tick(); setInterval(tick,1000);
 });
+
+// Show alarm bar and play sound if any PC is overtime
+setInterval(()=>{
+    if(anyOvertime){
+        document.getElementById('alarmBar').classList.add('show');
+        playAlarm();
+    }
+}, 1000);
 let currentPcId=null,selectedMins=null;
 function openStartModal(id,name){currentPcId=id;selectedMins=null;document.getElementById('startModalTitle').textContent='Start: '+name;document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('selected'));document.getElementById('startModal').style.display='flex';}
 function closeStartModal(){document.getElementById('startModal').style.display='none';}
