@@ -1,5 +1,7 @@
 <?php
 session_start();
+error_reporting(0);
+ini_set('display_errors', 0);
 include "config/db.php";
 
 if (!isset($_SESSION['admin_username']) && !isset($_SESSION['username'])) {
@@ -244,7 +246,9 @@ align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;}
         }
     ?>
         <div class="pc-card <?= $isActive ? 'in-use' : 'available' ?>" id="pc-card-<?= $pc['id'] ?>"
-             onclick="<?= $isActive ? "openEndModal({$pc['id']},".json_encode($pc['name']).")" : "openStartModal({$pc['id']},".json_encode($pc['name']).")" ?>">
+             data-pc-id="<?= $pc['id'] ?>"
+             data-pc-name="<?= htmlspecialchars($pc['name'], ENT_QUOTES) ?>"
+             data-action="<?= $isActive ? 'end' : 'start' ?>">
 
             <div class="pc-icon"><i class="fas fa-desktop"></i></div>
             <div class="pc-name"><?= htmlspecialchars($pc['name']) ?></div>
@@ -313,9 +317,22 @@ let currentPcId = null;
 let currentPcName = null;
 let selectedMins = null;
 
-// Timers
+// ── PC card clicks (event delegation – works even if inline onclick fails) ──
+document.addEventListener('click', function(e) {
+    const card = e.target.closest('.pc-card');
+    if (!card) return;
+    const id     = card.dataset.pcId;
+    const name   = card.dataset.pcName;
+    const action = card.dataset.action;
+    if (action === 'start') openStartModal(id, name);
+    else if (action === 'end') openEndModal(id, name);
+});
+
+// ── Timers ──
 document.querySelectorAll('[id^="timer-"]').forEach(el => {
-    const start = new Date(el.dataset.start.replace(' ','T'));
+    const raw = el.dataset.start;
+    if (!raw) return;
+    const start = new Date(raw.replace(' ','T'));
     const limitMins = el.dataset.limit ? parseInt(el.dataset.limit) : null;
     const pcId = el.id.replace('timer-','');
     const card = document.getElementById('pc-card-' + pcId);
@@ -325,7 +342,6 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
 
     function tick() {
         const elapsed = Math.floor((Date.now() - start) / 1000);
-
         if (limitMins && elapsed >= limitMins * 60) {
             const over = elapsed - (limitMins * 60);
             el.textContent = '+' + pad(Math.floor(over/3600)) + ':' + pad(Math.floor((over%3600)/60)) + ':' + pad(over%60);
@@ -346,7 +362,7 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
     tick(); setInterval(tick, 1000);
 });
 
-// Alarm
+// ── Alarm ──
 setInterval(() => {
     if (anyOvertime) {
         document.getElementById('alarmBar').classList.add('show');
@@ -368,6 +384,7 @@ setInterval(() => {
     }
 }, 1000);
 
+// ── Modal functions ──
 function openStartModal(id, name) {
     currentPcId = id; currentPcName = name; selectedMins = null;
     document.getElementById('startModalTitle').textContent = 'Start ' + name;
@@ -380,7 +397,6 @@ function selectPkg(btn, mins) {
     selectedMins = mins;
     document.querySelectorAll('.pkg-btn,.btn-open-time').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
-    // Auto confirm
     setTimeout(() => {
         window.location.href = 'start_session.php?id=' + currentPcId + '&mins=' + selectedMins;
     }, 200);
@@ -399,12 +415,14 @@ function copyUrl() {
     navigator.clipboard.writeText(url).then(() => showToast('Session URL copied!', 'info'));
 }
 
+// Close modals on backdrop click
 ['startModal','endModal'].forEach(id => {
     document.getElementById(id).addEventListener('click', e => {
         if (e.target.id === id) document.getElementById(id).classList.remove('show');
     });
 });
 
+// Toast notifications
 const p = new URLSearchParams(location.search);
 if (p.get('status') === 'started') { showToast('Session started!', 'info'); history.replaceState({},'',location.pathname); }
 if (p.get('status') === 'ended') { showToast('Session ended — ' + p.get('pc') + ' · ₱' + parseFloat(p.get('paid')||0).toFixed(2), 'success'); history.replaceState({},'',location.pathname); }
