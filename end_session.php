@@ -8,7 +8,8 @@ if (isset($_GET['id'])) {
     $redirect = $_GET['redirect'] ?? null;
     $end_time = date("Y-m-d H:i:s");
 
-    $rates = $pdo->query("SELECT * FROM settings WHERE id = 1")->fetch();
+    $rates    = $pdo->query("SELECT * FROM settings WHERE id = 1")->fetch();
+    $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
 
     $stmt = $pdo->prepare("SELECT id, start_time, time_limit FROM sessions WHERE pc_id = :pc AND end_time IS NULL ORDER BY id DESC LIMIT 1");
     $stmt->execute([':pc' => $pc_id]);
@@ -24,18 +25,19 @@ if (isset($_GET['id'])) {
         $total_minutes = ($start_dt->diff($end_dt)->h * 60) + $start_dt->diff($end_dt)->i;
 
         $cost = 0;
-        if ($time_limit == 60)       $cost = $rates['hourly_rate'] ?? 0;
-        elseif ($time_limit == 120)  $cost = $rates['rate_2hr'] ?? 0;
-        elseif ($time_limit == 180)  $cost = $rates['rate_3hr'] ?? 0;
-        elseif ($time_limit == 300)  $cost = $rates['rate_5hr'] ?? 0;
-        elseif ($time_limit == 360)  $cost = $rates['rate_6hr'] ?? 0;
-        elseif ($time_limit == 420)  $cost = $rates['rate_7hr'] ?? 0;
-        elseif ($time_limit == 480)  $cost = $rates['rate_8hr'] ?? 0;
-        elseif ($time_limit == 540)  $cost = $rates['rate_9hr'] ?? 0;
-        elseif ($time_limit == 600)  $cost = $rates['rate_10hr'] ?? 0;
-        elseif ($time_limit == 660)  $cost = $rates['rate_11hr'] ?? 0;
-        elseif ($time_limit == 720)  $cost = $rates['rate_12hr'] ?? 0;
-        else $cost = max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
+        if ($time_limit) {
+            $pkgQuery->execute([':m' => $time_limit]);
+            $pkgRow = $pkgQuery->fetch();
+            if ($pkgRow) {
+                $cost = $pkgRow['price'];
+            } else {
+                // Open time — charge by minute
+                $cost = max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
+            }
+        } else {
+            // Open time
+            $cost = max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
+        }
 
         $pc = $pdo->prepare("SELECT name FROM pcs WHERE id = :id");
         $pc->execute([':id' => $pc_id]);
