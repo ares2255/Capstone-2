@@ -140,10 +140,10 @@ background-image:linear-gradient(rgba(19,39,66,.25) 1px,transparent 1px),linear-
 /* Modal */
 .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
 background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:9999;
-align-items:center;justify-content:center;}
+align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;}
 .modal-overlay.show{display:flex;}
 
-.modal-box{background:#0d1b2e;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:32px;width:420px;max-width:95vw;text-align:center;}
+.modal-box{background:#0d1b2e;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:32px;width:420px;max-width:95vw;text-align:center;max-height:90vh;overflow-y:auto;margin:auto;}
 .modal-title{font-size:20px;font-weight:700;margin-bottom:6px;color:#38bdf8;}
 .modal-sub{color:#4a5f7a;font-size:13px;margin-bottom:24px;}
 
@@ -283,17 +283,17 @@ align-items:center;justify-content:center;}
         <button class="btn-open-time" onclick="selectPkg(this,0)">OPEN TIME</button>
 
         <div class="pkg-grid">
-            <button class="pkg-btn" onclick="selectPkg(this,60)">1 HR (₱<?= $r['hourly_rate'] ?? '—' ?>)</button>
-            <button class="pkg-btn" onclick="selectPkg(this,120)">2 HRS (₱<?= $r['rate_2hr'] ?? '—' ?>)</button>
-            <button class="pkg-btn" onclick="selectPkg(this,180)">3 HRS (₱<?= $r['rate_3hr'] ?? '—' ?>)</button>
-            <button class="pkg-btn" onclick="selectPkg(this,300)">5 HRS (₱<?= $r['rate_5hr'] ?? '—' ?>)</button>
-            <button class="pkg-btn" onclick="selectPkg(this,360)">6 HRS (₱<?= $r['rate_6hr'] ?? '—' ?>)</button>
-            <button class="pkg-btn" onclick="selectPkg(this,420)">7 HRS (₱<?= $r['rate_7hr'] ?? '—' ?>)</button>
-            <button class="pkg-btn" onclick="selectPkg(this,480)">8 HRS (₱<?= $r['rate_8hr'] ?? '—' ?>)</button>
-            <button class="pkg-btn" onclick="selectPkg(this,540)">9 HRS (₱<?= $r['rate_9hr'] ?? '—' ?>)</button>
-            <button class="pkg-btn" onclick="selectPkg(this,600)">10 HRS (₱<?= $r['rate_10hr'] ?? '—' ?>)</button>
-            <button class="pkg-btn" onclick="selectPkg(this,660)">11 HRS (₱<?= $r['rate_11hr'] ?? '—' ?>)</button>
-            <button class="pkg-btn" style="grid-column:1/-1;border-color:rgba(46,204,113,.4);color:#2ecc71;" onclick="selectPkg(this,720)">12 HOURS (₱<?= $r['rate_12hr'] ?? '—' ?>)</button>
+            <?php if(!empty($r['hourly_rate'])): ?><button class="pkg-btn" onclick="selectPkg(this,60)">1 HR (&#8369;<?= $r['hourly_rate'] ?>)</button><?php endif; ?>
+            <?php if(!empty($r['rate_2hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,120)">2 HRS (&#8369;<?= $r['rate_2hr'] ?>)</button><?php endif; ?>
+            <?php if(!empty($r['rate_3hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,180)">3 HRS (&#8369;<?= $r['rate_3hr'] ?>)</button><?php endif; ?>
+            <?php if(!empty($r['rate_5hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,300)">5 HRS (&#8369;<?= $r['rate_5hr'] ?>)</button><?php endif; ?>
+            <?php if(!empty($r['rate_6hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,360)">6 HRS (&#8369;<?= $r['rate_6hr'] ?>)</button><?php endif; ?>
+            <?php if(!empty($r['rate_7hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,420)">7 HRS (&#8369;<?= $r['rate_7hr'] ?>)</button><?php endif; ?>
+            <?php if(!empty($r['rate_8hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,480)">8 HRS (&#8369;<?= $r['rate_8hr'] ?>)</button><?php endif; ?>
+            <?php if(!empty($r['rate_9hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,540)">9 HRS (&#8369;<?= $r['rate_9hr'] ?>)</button><?php endif; ?>
+            <?php if(!empty($r['rate_10hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,600)">10 HRS (&#8369;<?= $r['rate_10hr'] ?>)</button><?php endif; ?>
+            <?php if(!empty($r['rate_11hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,660)">11 HRS (&#8369;<?= $r['rate_11hr'] ?>)</button><?php endif; ?>
+            <?php if(!empty($r['rate_12hr'])): ?><button class="pkg-btn" style="grid-column:1/-1;border-color:rgba(46,204,113,.4);color:#2ecc71;" onclick="selectPkg(this,720)">12 HOURS (&#8369;<?= $r['rate_12hr'] ?>)</button><?php endif; ?>
         </div>
 
         <span class="btn-cancel-link" onclick="closeStartModal()">Cancel</span>
