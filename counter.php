@@ -236,10 +236,16 @@ align-items:center;justify-content:center;}
         // Pre-calculate cost for display
         $cost = 0;
         if ($isActive && $timeLimit) {
-            if ($timeLimit==60) $cost=$r['hourly_rate'];
+            if ($timeLimit==60)  $cost=$r['hourly_rate'];
+            elseif($timeLimit==120) $cost=$r['rate_2hr']??0;
             elseif($timeLimit==180) $cost=$r['rate_3hr'];
             elseif($timeLimit==300) $cost=$r['rate_5hr'];
+            elseif($timeLimit==360) $cost=$r['rate_6hr']??0;
             elseif($timeLimit==420) $cost=$r['rate_7hr'];
+            elseif($timeLimit==480) $cost=$r['rate_8hr']??0;
+            elseif($timeLimit==540) $cost=$r['rate_9hr']??0;
+            elseif($timeLimit==600) $cost=$r['rate_10hr']??0;
+            elseif($timeLimit==660) $cost=$r['rate_11hr']??0;
             elseif($timeLimit==720) $cost=$r['rate_12hr'];
         }
     ?>
@@ -278,9 +284,15 @@ align-items:center;justify-content:center;}
 
         <div class="pkg-grid">
             <button class="pkg-btn" onclick="selectPkg(this,60)">1 HR (₱<?= $r['hourly_rate'] ?? '—' ?>)</button>
+            <button class="pkg-btn" onclick="selectPkg(this,120)">2 HRS (₱<?= $r['rate_2hr'] ?? '—' ?>)</button>
             <button class="pkg-btn" onclick="selectPkg(this,180)">3 HRS (₱<?= $r['rate_3hr'] ?? '—' ?>)</button>
             <button class="pkg-btn" onclick="selectPkg(this,300)">5 HRS (₱<?= $r['rate_5hr'] ?? '—' ?>)</button>
+            <button class="pkg-btn" onclick="selectPkg(this,360)">6 HRS (₱<?= $r['rate_6hr'] ?? '—' ?>)</button>
             <button class="pkg-btn" onclick="selectPkg(this,420)">7 HRS (₱<?= $r['rate_7hr'] ?? '—' ?>)</button>
+            <button class="pkg-btn" onclick="selectPkg(this,480)">8 HRS (₱<?= $r['rate_8hr'] ?? '—' ?>)</button>
+            <button class="pkg-btn" onclick="selectPkg(this,540)">9 HRS (₱<?= $r['rate_9hr'] ?? '—' ?>)</button>
+            <button class="pkg-btn" onclick="selectPkg(this,600)">10 HRS (₱<?= $r['rate_10hr'] ?? '—' ?>)</button>
+            <button class="pkg-btn" onclick="selectPkg(this,660)">11 HRS (₱<?= $r['rate_11hr'] ?? '—' ?>)</button>
             <button class="pkg-btn" style="grid-column:1/-1;border-color:rgba(46,204,113,.4);color:#2ecc71;" onclick="selectPkg(this,720)">12 HOURS (₱<?= $r['rate_12hr'] ?? '—' ?>)</button>
         </div>
 
