@@ -310,11 +310,7 @@ align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;}
         <i class="fas fa-stop-circle end-icon"></i>
         <h3 id="endModalTitle">End Session?</h3>
         <p>This will stop the session and calculate the final cost.</p>
-        <div style="margin-bottom:16px;">
-            <button onclick="copyUrl()" style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:#38bdf8;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;width:100%;">
-                <i class="fas fa-link"></i> Copy Customer Session URL
-            </button>
-        </div>
+
         <div class="modal-actions">
             <button class="btn-stay" onclick="closeEndModal()">Cancel</button>
             <button class="btn-end-confirm" id="confirmEndBtn">End Session</button>
