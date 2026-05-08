@@ -24,18 +24,12 @@ if (isset($_GET['id'])) {
         $total_minutes = ($start_dt->diff($end_dt)->h * 60) + $start_dt->diff($end_dt)->i;
 
         $cost = 0;
-        if ($time_limit == 60)       $cost = $rates['hourly_rate'];
-        elseif ($time_limit == 120)  $cost = $rates['rate_2hr'] ?? 0;
-        elseif ($time_limit == 180)  $cost = $rates['rate_3hr'];
-        elseif ($time_limit == 300)  $cost = $rates['rate_5hr'];
-        elseif ($time_limit == 360)  $cost = $rates['rate_6hr'] ?? 0;
-        elseif ($time_limit == 420)  $cost = $rates['rate_7hr'];
-        elseif ($time_limit == 480)  $cost = $rates['rate_8hr'] ?? 0;
-        elseif ($time_limit == 540)  $cost = $rates['rate_9hr'] ?? 0;
-        elseif ($time_limit == 600)  $cost = $rates['rate_10hr'] ?? 0;
-        elseif ($time_limit == 660)  $cost = $rates['rate_11hr'] ?? 0;
-        elseif ($time_limit == 720)  $cost = $rates['rate_12hr'];
-        else $cost = max($rates['minimum_charge'], ($total_minutes / 60) * $rates['hourly_rate']);
+        if ($time_limit == 60)       $cost = $rates['hourly_rate'] ?? 0;
+        elseif ($time_limit == 180)  $cost = $rates['rate_3hr'] ?? 0;
+        elseif ($time_limit == 300)  $cost = $rates['rate_5hr'] ?? 0;
+        elseif ($time_limit == 420)  $cost = $rates['rate_7hr'] ?? 0;
+        elseif ($time_limit == 720)  $cost = $rates['rate_12hr'] ?? 0;
+        else $cost = max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
 
         $pc = $pdo->prepare("SELECT name FROM pcs WHERE id = :id");
         $pc->execute([':id' => $pc_id]);
