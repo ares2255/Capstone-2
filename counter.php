@@ -233,20 +233,14 @@ align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;}
             $timeLimit = $sr['time_limit'] ?? null;
         }
 
-        // Pre-calculate cost for display
+        // Pre-calculate cost for display (only columns that exist in DB)
         $cost = 0;
         if ($isActive && $timeLimit) {
-            if ($timeLimit==60)  $cost=$r['hourly_rate'];
-            elseif($timeLimit==120) $cost=$r['rate_2hr']??0;
-            elseif($timeLimit==180) $cost=$r['rate_3hr'];
-            elseif($timeLimit==300) $cost=$r['rate_5hr'];
-            elseif($timeLimit==360) $cost=$r['rate_6hr']??0;
-            elseif($timeLimit==420) $cost=$r['rate_7hr'];
-            elseif($timeLimit==480) $cost=$r['rate_8hr']??0;
-            elseif($timeLimit==540) $cost=$r['rate_9hr']??0;
-            elseif($timeLimit==600) $cost=$r['rate_10hr']??0;
-            elseif($timeLimit==660) $cost=$r['rate_11hr']??0;
-            elseif($timeLimit==720) $cost=$r['rate_12hr'];
+            if ($timeLimit==60)  $cost = $r['hourly_rate'] ?? 0;
+            elseif($timeLimit==180) $cost = $r['rate_3hr'] ?? 0;
+            elseif($timeLimit==300) $cost = $r['rate_5hr'] ?? 0;
+            elseif($timeLimit==420) $cost = $r['rate_7hr'] ?? 0;
+            elseif($timeLimit==720) $cost = $r['rate_12hr'] ?? 0;
         }
     ?>
         <div class="pc-card <?= $isActive ? 'in-use' : 'available' ?>" id="pc-card-<?= $pc['id'] ?>"
@@ -284,15 +278,9 @@ align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;}
 
         <div class="pkg-grid">
             <?php if(!empty($r['hourly_rate'])): ?><button class="pkg-btn" onclick="selectPkg(this,60)">1 HR (&#8369;<?= $r['hourly_rate'] ?>)</button><?php endif; ?>
-            <?php if(!empty($r['rate_2hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,120)">2 HRS (&#8369;<?= $r['rate_2hr'] ?>)</button><?php endif; ?>
             <?php if(!empty($r['rate_3hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,180)">3 HRS (&#8369;<?= $r['rate_3hr'] ?>)</button><?php endif; ?>
             <?php if(!empty($r['rate_5hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,300)">5 HRS (&#8369;<?= $r['rate_5hr'] ?>)</button><?php endif; ?>
-            <?php if(!empty($r['rate_6hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,360)">6 HRS (&#8369;<?= $r['rate_6hr'] ?>)</button><?php endif; ?>
             <?php if(!empty($r['rate_7hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,420)">7 HRS (&#8369;<?= $r['rate_7hr'] ?>)</button><?php endif; ?>
-            <?php if(!empty($r['rate_8hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,480)">8 HRS (&#8369;<?= $r['rate_8hr'] ?>)</button><?php endif; ?>
-            <?php if(!empty($r['rate_9hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,540)">9 HRS (&#8369;<?= $r['rate_9hr'] ?>)</button><?php endif; ?>
-            <?php if(!empty($r['rate_10hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,600)">10 HRS (&#8369;<?= $r['rate_10hr'] ?>)</button><?php endif; ?>
-            <?php if(!empty($r['rate_11hr'])): ?><button class="pkg-btn" onclick="selectPkg(this,660)">11 HRS (&#8369;<?= $r['rate_11hr'] ?>)</button><?php endif; ?>
             <?php if(!empty($r['rate_12hr'])): ?><button class="pkg-btn" style="grid-column:1/-1;border-color:rgba(46,204,113,.4);color:#2ecc71;" onclick="selectPkg(this,720)">12 HOURS (&#8369;<?= $r['rate_12hr'] ?>)</button><?php endif; ?>
         </div>
 
