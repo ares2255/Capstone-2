@@ -322,7 +322,6 @@ async function verifyCode() {
         if (!d.success) { showError(d.error, 2); return; }
 
         _resetUserId = d.user_id;
-        _resetToken  = d.token;
         showOnly('step3');
         document.getElementById('newPass').focus();
 
@@ -348,7 +347,6 @@ async function setPassword() {
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'action=set_password'
                 + '&user_id='          + encodeURIComponent(_resetUserId)
-                + '&token='            + encodeURIComponent(_resetToken)
                 + '&new_password='     + encodeURIComponent(np)
                 + '&confirm_password=' + encodeURIComponent(cp)
         });
