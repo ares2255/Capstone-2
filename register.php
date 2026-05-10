@@ -73,10 +73,19 @@
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
+const GOOGLE_CLIENT_ID = '<?= getenv("GOOGLE_CLIENT_ID") ?: "YOUR_GOOGLE_CLIENT_ID_HERE" ?>';
+
 function triggerGoogle() {
-    if (typeof google === 'undefined') { alert('Google Sign-In not loaded.'); return; }
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
+        alert('Google Sign-In is not configured. Please set your GOOGLE_CLIENT_ID in the server environment variables.');
+        return;
+    }
+    if (typeof google === 'undefined') {
+        alert('Google Sign-In script failed to load. Check your internet connection.');
+        return;
+    }
     google.accounts.id.initialize({
-        client_id: '<?= getenv("GOOGLE_CLIENT_ID") ?: "" ?>',
+        client_id: GOOGLE_CLIENT_ID,
         callback: (resp) => {
             document.getElementById('googleCredential').value = resp.credential;
             document.getElementById('googleForm').submit();
