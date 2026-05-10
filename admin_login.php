@@ -43,7 +43,11 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 .sent-state{text-align:center;padding:10px 0;}
 .sent-state i{font-size:40px;color:#2ecc71;display:block;margin-bottom:10px;}
 .sent-state h4{color:white;margin:0 0 6px;}
-.sent-state p{color:#8aa0c5;font-size:.84rem;margin:0;}
+/* OTP inputs */
+.otp-row{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
+.otp-input{width:44px;height:52px;text-align:center;font-size:22px;font-weight:700;
+background:#020810;border:2px solid #1e293b;color:white;border-radius:8px;outline:none;}
+.otp-input:focus{border-color:#38bdf8;}
 </style>
 </head>
 <body>
@@ -60,13 +64,14 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
                 <div class="success-msg">✅ Registration Successful! Please Login.</div>
             <?php elseif($_GET['status']==='google_fail'): ?>
                 <div class="error-msg">❌ Google account not registered. Please register first.</div>
+            <?php elseif($_GET['status']==='pw_changed'): ?>
+                <div class="success-msg">✅ Password changed successfully! Please login.</div>
             <?php endif; ?>
         <?php endif; ?>
         <?php if(isset($_GET['error'])): ?>
             <div class="error-msg">❌ Invalid Credentials. Please try again.</div>
         <?php endif; ?>
 
-        <!-- Google -->
         <button class="google-btn" onclick="triggerGoogle()">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
             Continue with Google
@@ -84,7 +89,7 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
                 <input type="password" name="admin_pass" placeholder="••••••••" required>
             </div>
             <div class="forgot-row">
-                <a onclick="document.getElementById('forgotModal').classList.add('show')">Forgot password?</a>
+                <a onclick="openForgot()">Forgot password?</a>
             </div>
             <button type="submit" class="login-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
         </form>
@@ -99,31 +104,57 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 <!-- Forgot Password Modal -->
 <div class="modal-bg" id="forgotModal">
     <div class="modal-card">
-        <h3><i class="fas fa-key"></i> Reset Password</h3>
-        <p>Enter your email address and we'll send a temporary password to your inbox.</p>
 
-        <div id="forgotForm">
+        <!-- Step 1: Enter email -->
+        <div id="step1">
+            <h3><i class="fas fa-key"></i> Reset Password</h3>
+            <p>Enter your email or username and we'll send a 6-digit code.</p>
             <input type="text" id="forgotUser" class="modal-input" placeholder="Your email or username">
-            <button class="modal-btn" onclick="submitForgot()"><i class="fas fa-paper-plane"></i> Send Reset Email</button>
+            <button class="modal-btn" onclick="submitForgot()"><i class="fas fa-paper-plane"></i> Send Code</button>
+            <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
         </div>
 
+        <!-- Step 2: Enter code -->
+        <div id="step2" style="display:none;">
+            <h3><i class="fas fa-shield-alt"></i> Enter Code</h3>
+            <p>We sent a 6-digit code to your email. Enter it below.</p>
+            <div class="otp-row">
+                <input class="otp-input" maxlength="1" type="text" inputmode="numeric">
+                <input class="otp-input" maxlength="1" type="text" inputmode="numeric">
+                <input class="otp-input" maxlength="1" type="text" inputmode="numeric">
+                <input class="otp-input" maxlength="1" type="text" inputmode="numeric">
+                <input class="otp-input" maxlength="1" type="text" inputmode="numeric">
+                <input class="otp-input" maxlength="1" type="text" inputmode="numeric">
+            </div>
+            <div id="codeError" class="error-msg" style="display:none;margin-bottom:10px;"></div>
+            <button class="modal-btn" onclick="verifyCode()"><i class="fas fa-check"></i> Verify Code</button>
+            <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
+        </div>
+
+        <!-- Step 3: New password -->
+        <div id="step3" style="display:none;">
+            <h3><i class="fas fa-lock"></i> New Password</h3>
+            <p>Code verified! Enter your new password.</p>
+            <input type="password" id="newPass" class="modal-input" placeholder="New password">
+            <input type="password" id="confirmPass" class="modal-input" placeholder="Confirm new password">
+            <div id="passError" class="error-msg" style="display:none;margin-bottom:10px;"></div>
+            <button class="modal-btn" onclick="changePassword()"><i class="fas fa-save"></i> Change Password</button>
+            <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
+        </div>
+
+        <!-- Sending -->
         <div id="sendingState" class="sending-state" style="display:none;">
             <i class="fas fa-spinner"></i>
-            Sending email...
+            Sending code...
         </div>
 
-        <div id="sentState" class="sent-state" style="display:none;">
-            <i class="fas fa-check-circle"></i>
-            <h4>Email Sent!</h4>
-            <p>A temporary password has been sent to your registered email address. Check your inbox!</p>
-        </div>
-
+        <!-- Error -->
         <div id="errorState" style="display:none;margin-top:8px;">
             <div class="error-msg" id="errorMsg"></div>
             <button class="modal-btn" onclick="resetForgotForm()" style="background:#64748b;margin-top:6px;">Try Again</button>
+            <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
         </div>
 
-        <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
     </div>
 </div>
 
@@ -136,16 +167,17 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-// ─────────────────────────────────────────────
-// CONFIGURATION — fill in your keys here
-// ─────────────────────────────────────────────
 const EMAILJS_PUBLIC_KEY  = 'iF0sQnadyLlD-2URo';
 const EMAILJS_PRIVATE_KEY = 'zAcvRcBOAz7GCxWNlZ424';
 const EMAILJS_SERVICE_ID  = 'service_kaimwbk';
 const EMAILJS_TEMPLATE_ID = 'template_ku2qrmw';
-// ─────────────────────────────────────────────
+
+let sentCode     = '';
+let resetUserId  = null;
 
 emailjs.init(EMAILJS_PUBLIC_KEY);
+
+function openForgot() { document.getElementById('forgotModal').classList.add('show'); }
 
 function closeForgot() {
     document.getElementById('forgotModal').classList.remove('show');
@@ -153,29 +185,43 @@ function closeForgot() {
 }
 
 function resetForgotForm() {
-    document.getElementById('forgotForm').style.display = 'block';
-    document.getElementById('sendingState').style.display = 'none';
-    document.getElementById('sentState').style.display = 'none';
-    document.getElementById('errorState').style.display = 'none';
+    ['step1','step2','step3','sendingState','errorState'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('step1').style.display = 'block';
     document.getElementById('forgotUser').value = '';
+    document.getElementById('newPass').value = '';
+    document.getElementById('confirmPass').value = '';
+    document.querySelectorAll('.otp-input').forEach(i => i.value = '');
+    sentCode = ''; resetUserId = null;
 }
 
 document.getElementById('forgotModal').addEventListener('click', e => {
     if (e.target.id === 'forgotModal') closeForgot();
 });
 
+// OTP auto-advance
+document.querySelectorAll('.otp-input').forEach((inp, idx, all) => {
+    inp.addEventListener('input', () => {
+        inp.value = inp.value.replace(/\D/g,'');
+        if (inp.value && idx < all.length - 1) all[idx+1].focus();
+    });
+    inp.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !inp.value && idx > 0) all[idx-1].focus();
+    });
+});
+
 function showError(msg) {
-    document.getElementById('sendingState').style.display = 'none';
-    document.getElementById('forgotForm').style.display = 'none';
+    ['step1','step2','step3','sendingState'].forEach(id => document.getElementById(id).style.display = 'none');
     document.getElementById('errorState').style.display = 'block';
     document.getElementById('errorMsg').textContent = msg;
 }
 
 async function submitForgot() {
     const username = document.getElementById('forgotUser').value.trim();
-    if (!username) { alert('Please enter your username.'); return; }
+    if (!username) { alert('Please enter your email or username.'); return; }
 
-    document.getElementById('forgotForm').style.display = 'none';
+    document.getElementById('step1').style.display = 'none';
     document.getElementById('sendingState').style.display = 'block';
 
     try {
@@ -185,19 +231,16 @@ async function submitForgot() {
             body: 'username=' + encodeURIComponent(username)
         });
         const d = await res.json();
+        if (!d.success) { showError(d.error); return; }
 
-        if (!d.success) {
-            showError(d.error);
-            return;
-        }
+        // Store for later
+        sentCode    = d.code;
+        resetUserId = d.user_id;
 
-        // Send email via EmailJS REST API directly
+        // Send email
         const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'origin': 'https://capstone-2-production-c904.up.railway.app'
-            },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 service_id:   EMAILJS_SERVICE_ID,
                 template_id:  EMAILJS_TEMPLATE_ID,
@@ -206,28 +249,66 @@ async function submitForgot() {
                 template_params: {
                     email:    d.email,
                     to_name:  d.username,
-                    passcode: d.temp_pass,
-                    time:     '15 minutes',
+                    passcode: d.code,
+                    time:     '10 minutes',
                 }
             })
         });
 
-        if (!emailRes.ok) {
-            const errText = await emailRes.text();
-            throw new Error('EmailJS: ' + errText);
-        }
+        if (!emailRes.ok) { const t = await emailRes.text(); throw new Error(t); }
 
         document.getElementById('sendingState').style.display = 'none';
-        document.getElementById('sentState').style.display = 'block';
+        document.getElementById('step2').style.display = 'block';
+        document.querySelectorAll('.otp-input')[0].focus();
 
     } catch (err) {
-        console.error('EmailJS full error:', err);
-        const msg = err?.text || err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
-        showError('❌ ' + msg);
+        showError('❌ ' + (err.message || err));
     }
 }
 
-// Google Sign-In — direct OAuth redirect (most reliable)
+function verifyCode() {
+    const entered = [...document.querySelectorAll('.otp-input')].map(i => i.value).join('');
+    if (entered.length < 6) { 
+        document.getElementById('codeError').style.display = 'block';
+        document.getElementById('codeError').textContent = 'Please enter all 6 digits.';
+        return; 
+    }
+    if (entered !== sentCode) {
+        document.getElementById('codeError').style.display = 'block';
+        document.getElementById('codeError').textContent = '❌ Wrong code. Please try again.';
+        return;
+    }
+    document.getElementById('codeError').style.display = 'none';
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step3').style.display = 'block';
+    document.getElementById('newPass').focus();
+}
+
+async function changePassword() {
+    const newPass     = document.getElementById('newPass').value;
+    const confirmPass = document.getElementById('confirmPass').value;
+    const errEl       = document.getElementById('passError');
+
+    if (newPass.length < 6) { errEl.style.display='block'; errEl.textContent='Password must be at least 6 characters.'; return; }
+    if (newPass !== confirmPass) { errEl.style.display='block'; errEl.textContent='Passwords do not match.'; return; }
+    errEl.style.display = 'none';
+
+    try {
+        const res = await fetch('change_password.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'user_id=' + encodeURIComponent(resetUserId) + '&new_pass=' + encodeURIComponent(newPass)
+        });
+        const d = await res.json();
+        if (!d.success) { errEl.style.display='block'; errEl.textContent = d.error; return; }
+        closeForgot();
+        window.location.href = 'admin_login.php?status=pw_changed';
+    } catch(err) {
+        errEl.style.display='block'; errEl.textContent = '❌ ' + (err.message || err);
+    }
+}
+
+// Google Sign-In
 const GOOGLE_CLIENT_ID    = '647107465413-18hemskapc88e4gil1a9g009qpli9074.apps.googleusercontent.com';
 const GOOGLE_REDIRECT_URI = 'https://capstone-2-production-c904.up.railway.app/google_callback.php';
 
