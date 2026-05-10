@@ -136,8 +136,16 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-// EmailJS config
-emailjs.init('iF0sQnadyLlD-2URo');
+// ─────────────────────────────────────────────
+// CONFIGURATION — fill in your keys here
+// ─────────────────────────────────────────────
+const EMAILJS_PUBLIC_KEY  = 'iF0sQnadyLlD-2URo';   // EmailJS > Account > Public Key
+const EMAILJS_SERVICE_ID  = 'service_kaimwbk';       // EmailJS > Email Services > Service ID
+const EMAILJS_TEMPLATE_ID = 'i1kf18p';               // EmailJS > Email Templates > Template ID
+const GOOGLE_CLIENT_ID    = '<?= getenv("GOOGLE_CLIENT_ID") ?: "YOUR_GOOGLE_CLIENT_ID_HERE" ?>';
+// ─────────────────────────────────────────────
+
+emailjs.init(EMAILJS_PUBLIC_KEY);
 
 function closeForgot() {
     document.getElementById('forgotModal').classList.remove('show');
@@ -156,52 +164,65 @@ document.getElementById('forgotModal').addEventListener('click', e => {
     if (e.target.id === 'forgotModal') closeForgot();
 });
 
-function submitForgot() {
+function showError(msg) {
+    document.getElementById('sendingState').style.display = 'none';
+    document.getElementById('forgotForm').style.display = 'none';
+    document.getElementById('errorState').style.display = 'block';
+    document.getElementById('errorMsg').textContent = msg;
+}
+
+async function submitForgot() {
     const username = document.getElementById('forgotUser').value.trim();
     if (!username) { alert('Please enter your username.'); return; }
 
     document.getElementById('forgotForm').style.display = 'none';
     document.getElementById('sendingState').style.display = 'block';
 
-    fetch('forgot_password.php', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'username=' + encodeURIComponent(username)
-    })
-    .then(r => r.json())
-    .then(d => {
+    try {
+        const res = await fetch('forgot_password.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'username=' + encodeURIComponent(username)
+        });
+        const d = await res.json();
+
         if (!d.success) {
-            document.getElementById('sendingState').style.display = 'none';
-            document.getElementById('errorState').style.display = 'block';
-            document.getElementById('errorMsg').textContent = d.error;
+            showError(d.error);
             return;
         }
 
         // Send email via EmailJS
-        return emailjs.send('service_kaimwbk', 'i1kf18p', {
-            email:    d.email,
+        // Make sure your EmailJS template uses these variable names:
+        // {{to_email}} → recipient email
+        // {{to_name}}  → username
+        // {{passcode}} → temporary password
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+            to_email: d.email,
             to_name:  d.username,
             passcode: d.temp_pass,
-            time:     '15 minutes'
         });
-    })
-    .then(() => {
+
         document.getElementById('sendingState').style.display = 'none';
         document.getElementById('sentState').style.display = 'block';
-    })
-    .catch(err => {
-        console.error('EmailJS error:', err);
-        document.getElementById('sendingState').style.display = 'none';
-        document.getElementById('errorState').style.display = 'block';
-        document.getElementById('errorMsg').textContent = '❌ Failed to send email. Please try again.';
-    });
+
+    } catch (err) {
+        console.error('Error:', err);
+        showError('❌ Failed to send email. Check your EmailJS template variables match: to_email, to_name, passcode');
+    }
 }
 
-// Google
+// Google Sign-In
 function triggerGoogle() {
-    if (typeof google === 'undefined') { alert('Google Sign-In not loaded.'); return; }
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
+        alert('Google Sign-In is not configured. Please set your GOOGLE_CLIENT_ID in the server environment variables.');
+        return;
+    }
+    if (typeof google === 'undefined') {
+        alert('Google Sign-In script failed to load. Check your internet connection.');
+        return;
+    }
     google.accounts.id.initialize({
-        client_id: '<?= getenv("GOOGLE_CLIENT_ID") ?: "" ?>',
+        client_id: GOOGLE_CLIENT_ID,
         callback: (resp) => {
             document.getElementById('googleCredential').value = resp.credential;
             document.getElementById('googleForm').submit();
