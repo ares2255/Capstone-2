@@ -2,28 +2,37 @@
 include "config/db.php";
 header('Content-Type: application/json');
 
-$username = $_POST['username'] ?? '';
-
+$username = trim($_POST['username'] ?? '');
 if (!$username) {
-    echo json_encode(['success' => false, 'error' => 'Please enter a username.']);
+    echo json_encode(['success' => false, 'error' => 'Please enter your username.']);
     exit();
 }
 
-$stmt = $pdo->prepare("SELECT id FROM users WHERE username = :u");
+$stmt = $pdo->prepare("SELECT id, email, username FROM users WHERE username = :u");
 $stmt->execute([':u' => $username]);
 $user = $stmt->fetch();
 
 if (!$user) {
-    echo json_encode(['success' => false, 'error' => '❌ Username not found. Check the spelling and try again.']);
+    echo json_encode(['success' => false, 'error' => '❌ Username not found.']);
     exit();
 }
 
-// Generate a simple memorable temp password
-$words  = ['Blue','Red','Fast','Star','Moon','Fire','Sky','Rock'];
-$temp   = $words[array_rand($words)] . rand(100, 999);
+if (empty($user['email'])) {
+    echo json_encode(['success' => false, 'error' => '❌ No email address linked to this account. Please contact your administrator.']);
+    exit();
+}
+
+// Generate temp password
+$words = ['Blue','Red','Fast','Star','Moon','Fire','Sky','Rock','Bolt','Wave'];
+$temp  = $words[array_rand($words)] . rand(100, 999);
 $hashed = password_hash($temp, PASSWORD_DEFAULT);
 
 $pdo->prepare("UPDATE users SET password = :p WHERE username = :u")
     ->execute([':p' => $hashed, ':u' => $username]);
 
-echo json_encode(['success' => true, 'temp_pass' => $temp]);
+echo json_encode([
+    'success'   => true,
+    'email'     => $user['email'],
+    'username'  => $user['username'],
+    'temp_pass' => $temp
+]);
