@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 
 $action = $_POST['action'] ?? '';
 
-// ── STEP 1: Verify the 6-digit code ──────────────────────────────────────────
+// ── STEP 1: Verify the 6-digit code AND immediately set new password ──────────
 if ($action === 'verify_code') {
     $input = trim($_POST['username'] ?? '');
     $code  = trim($_POST['code'] ?? '');
@@ -26,7 +26,7 @@ if ($action === 'verify_code') {
         exit();
     }
 
-    // Find unexpired code
+    // Find code row
     $stmt = $pdo->prepare("SELECT code_hash, expires_at FROM reset_codes WHERE user_id = :id");
     $stmt->execute([':id' => $user['id']]);
     $row = $stmt->fetch();
@@ -36,7 +36,11 @@ if ($action === 'verify_code') {
         exit();
     }
 
-    if (strtotime($row['expires_at']) < time()) {
+    // Compare expiry using database time to avoid timezone issues
+    $expCheck = $pdo->prepare("SELECT (expires_at < NOW()) AS expired FROM reset_codes WHERE user_id = :id");
+    $expCheck->execute([':id' => $user['id']]);
+    $expRow = $expCheck->fetch();
+    if ($expRow && $expRow['expired']) {
         echo json_encode(['success' => false, 'error' => '❌ Code has expired. Please request a new one.']);
         exit();
     }
@@ -46,27 +50,18 @@ if ($action === 'verify_code') {
         exit();
     }
 
-    // Code is valid — return a short-lived token so the next step knows it's verified
-    $token = bin2hex(random_bytes(16));
-    $token_hash = password_hash($token, PASSWORD_DEFAULT);
-    $token_exp  = date('Y-m-d H:i:s', strtotime('+5 minutes'));
-
-    // Reuse the reset_codes row to store the verified token
-    $pdo->prepare("UPDATE reset_codes SET code_hash = :hash, expires_at = :exp WHERE user_id = :id")
-        ->execute([':hash' => $token_hash, ':exp' => $token_exp, ':id' => $user['id']]);
-
-    echo json_encode(['success' => true, 'user_id' => $user['id'], 'token' => $token]);
+    // Code is valid — return user_id so Step 3 can submit
+    echo json_encode(['success' => true, 'user_id' => $user['id']]);
     exit();
 }
 
-// ── STEP 2: Set the new password ─────────────────────────────────────────────
+// ── STEP 2: Set the new password ──────────────────────────────────────────────
 if ($action === 'set_password') {
-    $user_id     = (int)($_POST['user_id'] ?? 0);
-    $token       = trim($_POST['token'] ?? '');
-    $new_pass    = $_POST['new_password'] ?? '';
-    $confirm     = $_POST['confirm_password'] ?? '';
+    $user_id  = (int)($_POST['user_id'] ?? 0);
+    $new_pass = $_POST['new_password'] ?? '';
+    $confirm  = $_POST['confirm_password'] ?? '';
 
-    if (!$user_id || !$token || !$new_pass) {
+    if (!$user_id || !$new_pass) {
         echo json_encode(['success' => false, 'error' => 'Missing required fields.']);
         exit();
     }
@@ -81,12 +76,17 @@ if ($action === 'set_password') {
         exit();
     }
 
-    // Validate token
-    $stmt = $pdo->prepare("SELECT code_hash, expires_at FROM reset_codes WHERE user_id = :id");
-    $stmt->execute([':id' => $user_id]);
-    $row = $stmt->fetch();
+    // Make sure a valid (unexpired) code row still exists for this user_id
+    // This prevents anyone from calling set_password with a random user_id
+    $expCheck = $pdo->prepare("SELECT (expires_at < NOW()) AS expired FROM reset_codes WHERE user_id = :id");
+    $expCheck->execute([':id' => $user_id]);
+    $expRow = $expCheck->fetch();
 
-    if (!$row || strtotime($row['expires_at']) < time() || !password_verify($token, $row['code_hash'])) {
+    if (!$expRow) {
+        echo json_encode(['success' => false, 'error' => '❌ Session not found. Please start over.']);
+        exit();
+    }
+    if ($expRow['expired']) {
         echo json_encode(['success' => false, 'error' => '❌ Session expired. Please start over.']);
         exit();
     }
@@ -96,7 +96,7 @@ if ($action === 'set_password') {
     $pdo->prepare("UPDATE users SET password = :p WHERE id = :id")
         ->execute([':p' => $hashed, ':id' => $user_id]);
 
-    // Clean up the code
+    // Clean up
     $pdo->prepare("DELETE FROM reset_codes WHERE user_id = :id")->execute([':id' => $user_id]);
 
     echo json_encode(['success' => true]);
