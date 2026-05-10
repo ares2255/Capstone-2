@@ -28,7 +28,7 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 /* Modal */
 .modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;}
 .modal-bg.show{display:flex;}
-.modal-card{background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:30px;width:380px;max-width:94vw;}
+.modal-card{background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:30px;width:400px;max-width:94vw;}
 .modal-card h3{margin:0 0 6px;color:#38bdf8;font-size:17px;display:flex;align-items:center;gap:8px;}
 .modal-card p{color:#64748b;font-size:.84rem;margin:0 0 18px;}
 .modal-input{width:100%;padding:10px 12px;background:#020810;border:1px solid #1e293b;color:white;border-radius:8px;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:12px;}
@@ -43,11 +43,13 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 .sent-state{text-align:center;padding:10px 0;}
 .sent-state i{font-size:40px;color:#2ecc71;display:block;margin-bottom:10px;}
 .sent-state h4{color:white;margin:0 0 6px;}
-/* OTP inputs */
-.otp-row{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
-.otp-input{width:44px;height:52px;text-align:center;font-size:22px;font-weight:700;
-background:#020810;border:2px solid #1e293b;color:white;border-radius:8px;outline:none;}
-.otp-input:focus{border-color:#38bdf8;}
+.sent-state p{color:#8aa0c5;font-size:.84rem;margin:0;}
+/* Code input boxes */
+.code-inputs{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
+.code-digit{width:46px;height:54px;text-align:center;font-size:1.5rem;font-weight:700;background:#020810;border:2px solid #1e293b;color:white;border-radius:8px;outline:none;transition:.2s;}
+.code-digit:focus{border-color:#38bdf8;box-shadow:0 0 0 3px rgba(56,189,248,.15);}
+/* Step labels */
+.step-badge{display:inline-flex;align-items:center;gap:6px;background:#1e293b;color:#38bdf8;font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:12px;letter-spacing:.05em;text-transform:uppercase;}
 </style>
 </head>
 <body>
@@ -64,14 +66,13 @@ background:#020810;border:2px solid #1e293b;color:white;border-radius:8px;outlin
                 <div class="success-msg">✅ Registration Successful! Please Login.</div>
             <?php elseif($_GET['status']==='google_fail'): ?>
                 <div class="error-msg">❌ Google account not registered. Please register first.</div>
-            <?php elseif($_GET['status']==='pw_changed'): ?>
-                <div class="success-msg">✅ Password changed successfully! Please login.</div>
             <?php endif; ?>
         <?php endif; ?>
         <?php if(isset($_GET['error'])): ?>
             <div class="error-msg">❌ Invalid Credentials. Please try again.</div>
         <?php endif; ?>
 
+        <!-- Google -->
         <button class="google-btn" onclick="triggerGoogle()">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
             Continue with Google
@@ -89,7 +90,7 @@ background:#020810;border:2px solid #1e293b;color:white;border-radius:8px;outlin
                 <input type="password" name="admin_pass" placeholder="••••••••" required>
             </div>
             <div class="forgot-row">
-                <a onclick="openForgot()">Forgot password?</a>
+                <a onclick="document.getElementById('forgotModal').classList.add('show')">Forgot password?</a>
             </div>
             <button type="submit" class="login-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
         </form>
@@ -105,54 +106,62 @@ background:#020810;border:2px solid #1e293b;color:white;border-radius:8px;outlin
 <div class="modal-bg" id="forgotModal">
     <div class="modal-card">
 
-        <!-- Step 1: Enter email -->
+        <!-- STEP 1: Enter username/email -->
         <div id="step1">
+            <div class="step-badge"><i class="fas fa-user"></i> Step 1 of 3</div>
             <h3><i class="fas fa-key"></i> Reset Password</h3>
-            <p>Enter your email or username and we'll send a 6-digit code.</p>
+            <p>Enter your username or email and we'll send a 6-digit code to your inbox.</p>
             <input type="text" id="forgotUser" class="modal-input" placeholder="Your email or username">
             <button class="modal-btn" onclick="submitForgot()"><i class="fas fa-paper-plane"></i> Send Code</button>
             <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
         </div>
 
-        <!-- Step 2: Enter code -->
-        <div id="step2" style="display:none;">
-            <h3><i class="fas fa-shield-alt"></i> Enter Code</h3>
-            <p>We sent a 6-digit code to your email. Enter it below.</p>
-            <div class="otp-row">
-                <input class="otp-input" maxlength="1" type="text" inputmode="numeric">
-                <input class="otp-input" maxlength="1" type="text" inputmode="numeric">
-                <input class="otp-input" maxlength="1" type="text" inputmode="numeric">
-                <input class="otp-input" maxlength="1" type="text" inputmode="numeric">
-                <input class="otp-input" maxlength="1" type="text" inputmode="numeric">
-                <input class="otp-input" maxlength="1" type="text" inputmode="numeric">
-            </div>
-            <div id="codeError" class="error-msg" style="display:none;margin-bottom:10px;"></div>
-            <button class="modal-btn" onclick="verifyCode()"><i class="fas fa-check"></i> Verify Code</button>
-            <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
-        </div>
-
-        <!-- Step 3: New password -->
-        <div id="step3" style="display:none;">
-            <h3><i class="fas fa-lock"></i> New Password</h3>
-            <p>Code verified! Enter your new password.</p>
-            <input type="password" id="newPass" class="modal-input" placeholder="New password">
-            <input type="password" id="confirmPass" class="modal-input" placeholder="Confirm new password">
-            <div id="passError" class="error-msg" style="display:none;margin-bottom:10px;"></div>
-            <button class="modal-btn" onclick="changePassword()"><i class="fas fa-save"></i> Change Password</button>
-            <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
-        </div>
-
-        <!-- Sending -->
+        <!-- Sending spinner -->
         <div id="sendingState" class="sending-state" style="display:none;">
             <i class="fas fa-spinner"></i>
             Sending code...
         </div>
 
+        <!-- STEP 2: Enter the 6-digit code -->
+        <div id="step2" style="display:none;">
+            <div class="step-badge"><i class="fas fa-shield-alt"></i> Step 2 of 3</div>
+            <h3><i class="fas fa-lock-open"></i> Enter Your Code</h3>
+            <p id="step2Desc">A 6-digit code was sent to your email. Enter it below &mdash; it expires in 15 minutes.</p>
+            <div class="code-inputs">
+                <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+            </div>
+            <button class="modal-btn" onclick="verifyCode()"><i class="fas fa-check"></i> Verify Code</button>
+            <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
+        </div>
+
+        <!-- STEP 3: Set new password -->
+        <div id="step3" style="display:none;">
+            <div class="step-badge"><i class="fas fa-lock"></i> Step 3 of 3</div>
+            <h3><i class="fas fa-key"></i> Set New Password</h3>
+            <p>Create a new password for your account.</p>
+            <input type="password" id="newPass" class="modal-input" placeholder="New password (min. 6 characters)">
+            <input type="password" id="confirmPass" class="modal-input" placeholder="Confirm new password">
+            <button class="modal-btn" onclick="setPassword()"><i class="fas fa-save"></i> Save New Password</button>
+            <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
+        </div>
+
+        <!-- Success -->
+        <div id="successState" class="sent-state" style="display:none;">
+            <i class="fas fa-check-circle"></i>
+            <h4>Password Updated!</h4>
+            <p>Your password has been changed. You can now log in with your new password.</p>
+            <button class="modal-btn" onclick="closeForgot()" style="margin-top:16px;">Back to Login</button>
+        </div>
+
         <!-- Error -->
         <div id="errorState" style="display:none;margin-top:8px;">
             <div class="error-msg" id="errorMsg"></div>
-            <button class="modal-btn" onclick="resetForgotForm()" style="background:#64748b;margin-top:6px;">Try Again</button>
-            <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
+            <button class="modal-btn" onclick="goBackStep()" style="background:#64748b;margin-top:6px;">Try Again</button>
         </div>
 
     </div>
@@ -167,17 +176,29 @@ background:#020810;border:2px solid #1e293b;color:white;border-radius:8px;outlin
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
+// ─────────────────────────────────────────────
+// CONFIGURATION — fill in your keys here
+// ─────────────────────────────────────────────
 const EMAILJS_PUBLIC_KEY  = 'iF0sQnadyLlD-2URo';
 const EMAILJS_PRIVATE_KEY = 'zAcvRcBOAz7GCxWNlZ424';
 const EMAILJS_SERVICE_ID  = 'service_kaimwbk';
 const EMAILJS_TEMPLATE_ID = 'template_ku2qrmw';
-
-let sentCode     = '';
-let resetUserId  = null;
+// ─────────────────────────────────────────────
 
 emailjs.init(EMAILJS_PUBLIC_KEY);
 
-function openForgot() { document.getElementById('forgotModal').classList.add('show'); }
+// ── State ────────────────────────────────────────────────────────────────
+let _resetUserId  = null;
+let _resetToken   = null;
+let _resetUser    = null;    // username/email entered in step 1
+let _errorFromStep = 1;      // which step to go back to on "Try Again"
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function showOnly(id) {
+    ['step1','sendingState','step2','step3','successState','errorState']
+        .forEach(s => document.getElementById(s).style.display = 'none');
+    document.getElementById(id).style.display = (id === 'sendingState') ? 'block' : 'block';
+}
 
 function closeForgot() {
     document.getElementById('forgotModal').classList.remove('show');
@@ -185,44 +206,56 @@ function closeForgot() {
 }
 
 function resetForgotForm() {
-    ['step1','step2','step3','sendingState','errorState'].forEach(id => {
-        document.getElementById(id).style.display = 'none';
-    });
-    document.getElementById('step1').style.display = 'block';
+    _resetUserId = null; _resetToken = null; _resetUser = null;
     document.getElementById('forgotUser').value = '';
     document.getElementById('newPass').value = '';
     document.getElementById('confirmPass').value = '';
-    document.querySelectorAll('.otp-input').forEach(i => i.value = '');
-    sentCode = ''; resetUserId = null;
+    document.querySelectorAll('.code-digit').forEach(i => i.value = '');
+    showOnly('step1');
+}
+
+function goBackStep() {
+    if (_errorFromStep === 2) { showOnly('step2'); }
+    else if (_errorFromStep === 3) { showOnly('step3'); }
+    else { resetForgotForm(); }
+}
+
+function showError(msg, fromStep = 1) {
+    _errorFromStep = fromStep;
+    document.getElementById('errorMsg').textContent = msg;
+    showOnly('errorState');
 }
 
 document.getElementById('forgotModal').addEventListener('click', e => {
     if (e.target.id === 'forgotModal') closeForgot();
 });
 
-// OTP auto-advance
-document.querySelectorAll('.otp-input').forEach((inp, idx, all) => {
-    inp.addEventListener('input', () => {
-        inp.value = inp.value.replace(/\D/g,'');
-        if (inp.value && idx < all.length - 1) all[idx+1].focus();
+// ── Code input auto-advance ───────────────────────────────────────────────
+document.querySelectorAll('.code-digit').forEach((input, idx, all) => {
+    input.addEventListener('input', () => {
+        input.value = input.value.replace(/\D/g, '').slice(0,1);
+        if (input.value && idx < all.length - 1) all[idx + 1].focus();
     });
-    inp.addEventListener('keydown', e => {
-        if (e.key === 'Backspace' && !inp.value && idx > 0) all[idx-1].focus();
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !input.value && idx > 0) all[idx - 1].focus();
+        if (e.key === 'Enter') verifyCode();
+    });
+    input.addEventListener('paste', e => {
+        e.preventDefault();
+        const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0,6);
+        digits.split('').forEach((d,i) => { if (all[i]) all[i].value = d; });
+        const next = all[Math.min(digits.length, all.length-1)];
+        if (next) next.focus();
     });
 });
 
-function showError(msg) {
-    ['step1','step2','step3','sendingState'].forEach(id => document.getElementById(id).style.display = 'none');
-    document.getElementById('errorState').style.display = 'block';
-    document.getElementById('errorMsg').textContent = msg;
-}
-
+// ── STEP 1: Request code ───────────────────────────────────────────────────
 async function submitForgot() {
     const username = document.getElementById('forgotUser').value.trim();
-    if (!username) { alert('Please enter your email or username.'); return; }
+    if (!username) { alert('Please enter your username or email.'); return; }
+    _resetUser = username;
 
-    document.getElementById('step1').style.display = 'none';
-    document.getElementById('sendingState').style.display = 'block';
+    showOnly('sendingState');
 
     try {
         const res = await fetch('forgot_password.php', {
@@ -231,16 +264,16 @@ async function submitForgot() {
             body: 'username=' + encodeURIComponent(username)
         });
         const d = await res.json();
-        if (!d.success) { showError(d.error); return; }
 
-        // Store for later
-        sentCode    = d.code;
-        resetUserId = d.user_id;
+        if (!d.success) { showError(d.error, 1); return; }
 
-        // Send email
+        // Send 6-digit code via EmailJS
         const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'origin': 'https://capstone-2-production-c904.up.railway.app'
+            },
             body: JSON.stringify({
                 service_id:   EMAILJS_SERVICE_ID,
                 template_id:  EMAILJS_TEMPLATE_ID,
@@ -250,65 +283,87 @@ async function submitForgot() {
                     email:    d.email,
                     to_name:  d.username,
                     passcode: d.code,
-                    time:     '10 minutes',
+                    time:     '15 minutes',
                 }
             })
         });
 
-        if (!emailRes.ok) { const t = await emailRes.text(); throw new Error(t); }
+        if (!emailRes.ok) {
+            const errText = await emailRes.text();
+            throw new Error('EmailJS: ' + errText);
+        }
 
-        document.getElementById('sendingState').style.display = 'none';
-        document.getElementById('step2').style.display = 'block';
-        document.querySelectorAll('.otp-input')[0].focus();
+        document.getElementById('step2Desc').textContent =
+            'A 6-digit code was sent to ' + d.email + '. Enter it below — it expires in 15 minutes.';
+        showOnly('step2');
+        document.querySelectorAll('.code-digit')[0].focus();
 
     } catch (err) {
-        showError('❌ ' + (err.message || err));
+        const msg = err?.message || String(err);
+        showError('❌ ' + msg, 1);
     }
 }
 
-function verifyCode() {
-    const entered = [...document.querySelectorAll('.otp-input')].map(i => i.value).join('');
-    if (entered.length < 6) { 
-        document.getElementById('codeError').style.display = 'block';
-        document.getElementById('codeError').textContent = 'Please enter all 6 digits.';
-        return; 
-    }
-    if (entered !== sentCode) {
-        document.getElementById('codeError').style.display = 'block';
-        document.getElementById('codeError').textContent = '❌ Wrong code. Please try again.';
-        return;
-    }
-    document.getElementById('codeError').style.display = 'none';
-    document.getElementById('step2').style.display = 'none';
-    document.getElementById('step3').style.display = 'block';
-    document.getElementById('newPass').focus();
-}
+// ── STEP 2: Verify code ────────────────────────────────────────────────────
+async function verifyCode() {
+    const code = Array.from(document.querySelectorAll('.code-digit')).map(i => i.value).join('');
+    if (code.length < 6) { alert('Please enter all 6 digits.'); return; }
 
-async function changePassword() {
-    const newPass     = document.getElementById('newPass').value;
-    const confirmPass = document.getElementById('confirmPass').value;
-    const errEl       = document.getElementById('passError');
-
-    if (newPass.length < 6) { errEl.style.display='block'; errEl.textContent='Password must be at least 6 characters.'; return; }
-    if (newPass !== confirmPass) { errEl.style.display='block'; errEl.textContent='Passwords do not match.'; return; }
-    errEl.style.display = 'none';
+    showOnly('sendingState');
 
     try {
-        const res = await fetch('change_password.php', {
+        const res = await fetch('reset_password.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'user_id=' + encodeURIComponent(resetUserId) + '&new_pass=' + encodeURIComponent(newPass)
+            body: 'action=verify_code&username=' + encodeURIComponent(_resetUser) + '&code=' + encodeURIComponent(code)
         });
         const d = await res.json();
-        if (!d.success) { errEl.style.display='block'; errEl.textContent = d.error; return; }
-        closeForgot();
-        window.location.href = 'admin_login.php?status=pw_changed';
-    } catch(err) {
-        errEl.style.display='block'; errEl.textContent = '❌ ' + (err.message || err);
+
+        if (!d.success) { showError(d.error, 2); return; }
+
+        _resetUserId = d.user_id;
+        _resetToken  = d.token;
+        showOnly('step3');
+        document.getElementById('newPass').focus();
+
+    } catch (err) {
+        showError('❌ ' + (err?.message || String(err)), 2);
     }
 }
 
-// Google Sign-In
+// ── STEP 3: Set new password ───────────────────────────────────────────────
+async function setPassword() {
+    const np = document.getElementById('newPass').value;
+    const cp = document.getElementById('confirmPass').value;
+
+    if (!np || !cp) { alert('Please fill in both password fields.'); return; }
+    if (np !== cp)  { alert('Passwords do not match.'); return; }
+    if (np.length < 6) { alert('Password must be at least 6 characters.'); return; }
+
+    showOnly('sendingState');
+
+    try {
+        const res = await fetch('reset_password.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'action=set_password'
+                + '&user_id='          + encodeURIComponent(_resetUserId)
+                + '&token='            + encodeURIComponent(_resetToken)
+                + '&new_password='     + encodeURIComponent(np)
+                + '&confirm_password=' + encodeURIComponent(cp)
+        });
+        const d = await res.json();
+
+        if (!d.success) { showError(d.error, 3); return; }
+
+        showOnly('successState');
+
+    } catch (err) {
+        showError('❌ ' + (err?.message || String(err)), 3);
+    }
+}
+
+// Google Sign-In — direct OAuth redirect (most reliable)
 const GOOGLE_CLIENT_ID    = '647107465413-18hemskapc88e4gil1a9g009qpli9074.apps.googleusercontent.com';
 const GOOGLE_REDIRECT_URI = 'https://capstone-2-production-c904.up.railway.app/google_callback.php';
 
