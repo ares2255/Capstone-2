@@ -142,7 +142,7 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 const EMAILJS_PUBLIC_KEY  = 'iF0sQnadyLlD-2URo';
 const EMAILJS_PRIVATE_KEY = 'zAcvRcBOAz7GCxWNlZ424';
 const EMAILJS_SERVICE_ID  = 'service_kaimwbk';
-const EMAILJS_TEMPLATE_ID = 'i1kf18p';
+const EMAILJS_TEMPLATE_ID = 'template_ku2qrmw';
 // ─────────────────────────────────────────────
 
 emailjs.init(EMAILJS_PUBLIC_KEY);
