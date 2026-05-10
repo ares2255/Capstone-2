@@ -139,7 +139,7 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 // ─────────────────────────────────────────────
 // CONFIGURATION — fill in your keys here
 // ─────────────────────────────────────────────
-const EMAILJS_PUBLIC_KEY  = 'iF0sQnadyLlD-2URo';
+const EMAILJS_PUBLIC_KEY  = 'iF0sQnadyLID-2URo';
 const EMAILJS_SERVICE_ID  = 'service_kaimwbk';
 const EMAILJS_TEMPLATE_ID = 'i1kf18p';
 // ─────────────────────────────────────────────
