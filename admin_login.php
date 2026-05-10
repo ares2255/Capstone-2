@@ -211,7 +211,7 @@ async function submitForgot() {
 }
 
 // Google Sign-In — direct OAuth redirect (most reliable)
-const GOOGLE_CLIENT_ID    = '647107465413-18hemskapc88e4gil1a9g009qpll9074.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID    = '647107465413-18hemskapc88e4gil1a9g009qpli9074.apps.googleusercontent.com';
 const GOOGLE_REDIRECT_URI = 'https://capstone-2-production-c904.up.railway.app/google_callback.php';
 
 function triggerGoogle() {
