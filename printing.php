@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "config/db.php";
+date_default_timezone_set('Asia/Manila');
 
 if (!isset($_SESSION['admin_username']) && !isset($_SESSION['username'])) {
     header("Location: index.php"); exit();
