@@ -206,8 +206,9 @@ async function submitForgot() {
         document.getElementById('sentState').style.display = 'block';
 
     } catch (err) {
-        console.error('Error:', err);
-        showError('❌ Failed to send email. Check your EmailJS template variables match: to_email, to_name, passcode');
+        console.error('EmailJS full error:', err);
+        const msg = err?.text || err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+        showError('❌ ' + msg);
     }
 }
 
