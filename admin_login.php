@@ -190,17 +190,27 @@ async function submitForgot() {
             return;
         }
 
-        // Send email via EmailJS
-        // Make sure your EmailJS template uses these variable names:
-        // {{to_email}} → recipient email
-        // {{to_name}}  → username
-        // {{passcode}} → temporary password
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-            email:    d.email,
-            to_name:  d.username,
-            passcode: d.temp_pass,
-            time:     '15 minutes',
+        // Send email via EmailJS REST API directly
+        const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                service_id:  EMAILJS_SERVICE_ID,
+                template_id: EMAILJS_TEMPLATE_ID,
+                user_id:     EMAILJS_PUBLIC_KEY,
+                template_params: {
+                    email:    d.email,
+                    to_name:  d.username,
+                    passcode: d.temp_pass,
+                    time:     '15 minutes',
+                }
+            })
         });
+
+        if (!emailRes.ok) {
+            const errText = await emailRes.text();
+            throw new Error('EmailJS: ' + errText);
+        }
 
         document.getElementById('sendingState').style.display = 'none';
         document.getElementById('sentState').style.display = 'block';
