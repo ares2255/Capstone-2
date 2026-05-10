@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 
 $input = trim($_POST['username'] ?? '');
 if (!$input) {
-    echo json_encode(['success' => false, 'error' => 'Please enter your username or email.']);
+    echo json_encode(['success' => false, 'error' => 'Please enter your username or email. [v2]']);
     exit();
 }
 
@@ -16,7 +16,7 @@ $stmt->execute([':u' => $input, ':e' => $input]);
 $user = $stmt->fetch();
 
 if (!$user) {
-    echo json_encode(['success' => false, 'error' => '❌ No account found with that username or email.']);
+    echo json_encode(['success' => false, 'error' => '❌ No account found with that username or email. [v2]']);
     exit();
 }
 
