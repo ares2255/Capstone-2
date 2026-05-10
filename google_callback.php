@@ -4,7 +4,7 @@ error_reporting(0);
 ini_set('display_errors', 0);
 include "config/db.php";
 
-$GOOGLE_CLIENT_ID     = '647107465413-18hemskapc88e4gil1a9g009qpll9074.apps.googleusercontent.com';
+$GOOGLE_CLIENT_ID     = '647107465413-18hemskapc88e4gil1a9g009qpli9074.apps.googleusercontent.com';
 $GOOGLE_CLIENT_SECRET = getenv('GOOGLE_CLIENT_SECRET') ?: '';
 $GOOGLE_REDIRECT_URI  = 'https://capstone-2-production-c904.up.railway.app/google_callback.php';
 
