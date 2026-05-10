@@ -1,6 +1,7 @@
 <?php
 session_start();
 include_once "config/db.php";
+date_default_timezone_set('Asia/Manila');
 
 if (!isset($_SESSION['username']) && !isset($_SESSION['admin_username'])) {
     header("Location: index.php"); exit();
@@ -16,8 +17,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $unit_price = ($type === 'BW') ? $rates['bw_rate'] : $rates['color_rate'];
     $total_price = $pages * $unit_price;
 
-    $stmt = $pdo->prepare("INSERT INTO print_jobs (type, pages, price, created_at) VALUES (:t, :p, :pr, NOW())");
-    $stmt->execute([':t' => $type, ':p' => $pages, ':pr' => $total_price]);
+    $stmt = $pdo->prepare("INSERT INTO print_jobs (type, pages, price, created_at) VALUES (:t, :p, :pr, :ts)");
+    $stmt->execute([':t' => $type, ':p' => $pages, ':pr' => $total_price, ':ts' => date('Y-m-d H:i:s')]);
 
     header("Location: printing.php?status=success");
     exit();
