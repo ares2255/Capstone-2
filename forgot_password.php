@@ -6,17 +6,17 @@ header('Content-Type: application/json');
 
 $input = trim($_POST['username'] ?? '');
 if (!$input) {
-    echo json_encode(['success' => false, 'error' => 'Please enter your username or email. [v2]']);
+    echo json_encode(['success' => false, 'error' => 'Please enter your username or email.']);
     exit();
 }
 
-// Search by username OR email
-$stmt = $pdo->prepare("SELECT id, email, username FROM users WHERE username = :u OR email = :e");
+// Search by username OR email (case-insensitive)
+$stmt = $pdo->prepare("SELECT id, email, username FROM users WHERE LOWER(username) = LOWER(:u) OR LOWER(email) = LOWER(:e)");
 $stmt->execute([':u' => $input, ':e' => $input]);
 $user = $stmt->fetch();
 
 if (!$user) {
-    echo json_encode(['success' => false, 'error' => '❌ No account found with that username or email. [v2]']);
+    echo json_encode(['success' => false, 'error' => '❌ No account found. You entered: ' . htmlspecialchars($input)]);
     exit();
 }
 
