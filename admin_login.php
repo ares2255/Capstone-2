@@ -139,7 +139,8 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 // ─────────────────────────────────────────────
 // CONFIGURATION — fill in your keys here
 // ─────────────────────────────────────────────
-const EMAILJS_PUBLIC_KEY  = 'iF0sQnadyLID-2URo';
+const EMAILJS_PUBLIC_KEY  = 'iF0sQnadyLlD-2URo';
+const EMAILJS_PRIVATE_KEY = 'zAcvRcBOAz7GCxWNlZ424';
 const EMAILJS_SERVICE_ID  = 'service_kaimwbk';
 const EMAILJS_TEMPLATE_ID = 'i1kf18p';
 // ─────────────────────────────────────────────
@@ -193,11 +194,15 @@ async function submitForgot() {
         // Send email via EmailJS REST API directly
         const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'origin': 'https://capstone-2-production-c904.up.railway.app'
+            },
             body: JSON.stringify({
-                service_id:  EMAILJS_SERVICE_ID,
-                template_id: EMAILJS_TEMPLATE_ID,
-                user_id:     EMAILJS_PUBLIC_KEY,
+                service_id:   EMAILJS_SERVICE_ID,
+                template_id:  EMAILJS_TEMPLATE_ID,
+                user_id:      EMAILJS_PUBLIC_KEY,
+                accessToken:  EMAILJS_PRIVATE_KEY,
                 template_params: {
                     email:    d.email,
                     to_name:  d.username,
