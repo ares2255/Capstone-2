@@ -100,10 +100,10 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 <div class="modal-bg" id="forgotModal">
     <div class="modal-card">
         <h3><i class="fas fa-key"></i> Reset Password</h3>
-        <p>Enter your username and we'll send a temporary password to your registered email.</p>
+        <p>Enter your email address and we'll send a temporary password to your inbox.</p>
 
         <div id="forgotForm">
-            <input type="text" id="forgotUser" class="modal-input" placeholder="Your username">
+            <input type="text" id="forgotUser" class="modal-input" placeholder="Your email or username">
             <button class="modal-btn" onclick="submitForgot()"><i class="fas fa-paper-plane"></i> Send Reset Email</button>
         </div>
 
@@ -139,10 +139,9 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 // ─────────────────────────────────────────────
 // CONFIGURATION — fill in your keys here
 // ─────────────────────────────────────────────
-const EMAILJS_PUBLIC_KEY  = 'iF0sQnadyLlD-2URo';   // EmailJS > Account > Public Key
-const EMAILJS_SERVICE_ID  = 'service_kaimwbk';       // EmailJS > Email Services > Service ID
-const EMAILJS_TEMPLATE_ID = 'i1kf18p';               // EmailJS > Email Templates > Template ID
-const GOOGLE_CLIENT_ID    = '<?= getenv("GOOGLE_CLIENT_ID") ?: "YOUR_GOOGLE_CLIENT_ID_HERE" ?>';
+const EMAILJS_PUBLIC_KEY  = 'iF0sQnadyLlD-2URo';
+const EMAILJS_SERVICE_ID  = 'service_kaimwbk';
+const EMAILJS_TEMPLATE_ID = 'i1kf18p';
 // ─────────────────────────────────────────────
 
 emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -211,24 +210,20 @@ async function submitForgot() {
     }
 }
 
-// Google Sign-In
+// Google Sign-In — direct OAuth redirect (most reliable)
+const GOOGLE_CLIENT_ID    = '647107465413-18hemskapc88e4gil1a9g009qpll9074.apps.googleusercontent.com';
+const GOOGLE_REDIRECT_URI = 'https://capstone-2-production-c904.up.railway.app/google_callback.php';
+
 function triggerGoogle() {
-    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
-        alert('Google Sign-In is not configured. Please set your GOOGLE_CLIENT_ID in the server environment variables.');
-        return;
-    }
-    if (typeof google === 'undefined') {
-        alert('Google Sign-In script failed to load. Check your internet connection.');
-        return;
-    }
-    google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (resp) => {
-            document.getElementById('googleCredential').value = resp.credential;
-            document.getElementById('googleForm').submit();
-        }
+    const params = new URLSearchParams({
+        client_id:     GOOGLE_CLIENT_ID,
+        redirect_uri:  GOOGLE_REDIRECT_URI,
+        response_type: 'code',
+        scope:         'openid email profile',
+        access_type:   'online',
+        state:         'login',
     });
-    google.accounts.id.prompt();
+    window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
 }
 </script>
 </body>
