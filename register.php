@@ -49,6 +49,10 @@
                 <label>New Username</label>
                 <input type="text" name="reg_user" placeholder="Create username" required>
             </div>
+            <div class="input-group" style="margin-top:15px;">
+                <label>Email Address</label>
+                <input type="email" name="reg_email" placeholder="your@email.com" required>
+            </div>
             <div class="input-group" style="margin-top:15px;margin-bottom:5px;">
                 <label>New Password</label>
                 <input type="password" name="reg_pass" placeholder="Create secure password" required>
