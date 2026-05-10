@@ -37,10 +37,13 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 .modal-btn:hover{background:#c0392b;}
 .modal-cancel{display:block;text-align:center;margin-top:12px;color:#64748b;font-size:.83rem;cursor:pointer;text-decoration:underline;}
 .modal-cancel:hover{color:#8aa0c5;}
-/* Reset success box */
-.reset-box{background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:18px;text-align:center;margin-top:8px;}
-.reset-box .tmp-pass{font-family:monospace;font-size:20px;color:#38bdf8;letter-spacing:2px;font-weight:700;margin:10px 0;}
-.reset-box p{color:#8aa0c5;font-size:.83rem;margin:0;}
+.sending-state{text-align:center;padding:20px;color:#8aa0c5;}
+.sending-state i{font-size:32px;color:#38bdf8;display:block;margin-bottom:12px;animation:spin 1s linear infinite;}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.sent-state{text-align:center;padding:10px 0;}
+.sent-state i{font-size:40px;color:#2ecc71;display:block;margin-bottom:10px;}
+.sent-state h4{color:white;margin:0 0 6px;}
+.sent-state p{color:#8aa0c5;font-size:.84rem;margin:0;}
 </style>
 </head>
 <body>
@@ -57,8 +60,6 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
                 <div class="success-msg">✅ Registration Successful! Please Login.</div>
             <?php elseif($_GET['status']==='google_fail'): ?>
                 <div class="error-msg">❌ Google account not registered. Please register first.</div>
-            <?php elseif($_GET['status']==='reset_sent'): ?>
-                <div class="success-msg">🔑 Password reset! Check below for your temporary password.</div>
             <?php endif; ?>
         <?php endif; ?>
         <?php if(isset($_GET['error'])): ?>
@@ -73,7 +74,6 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 
         <div class="divider">or continue with username</div>
 
-        <!-- Login form -->
         <form action="authenticate.php" method="POST">
             <div class="input-group">
                 <label>Admin Username</label>
@@ -100,14 +100,29 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 <div class="modal-bg" id="forgotModal">
     <div class="modal-card">
         <h3><i class="fas fa-key"></i> Reset Password</h3>
-        <p>Enter your username. We'll generate a temporary password you can change after logging in.</p>
+        <p>Enter your username and we'll send a temporary password to your registered email.</p>
+
         <div id="forgotForm">
-            <form onsubmit="submitForgot(event)">
-                <input type="text" id="forgotUser" class="modal-input" placeholder="Your username" required>
-                <button type="submit" class="modal-btn"><i class="fas fa-paper-plane"></i> Reset My Password</button>
-            </form>
+            <input type="text" id="forgotUser" class="modal-input" placeholder="Your username">
+            <button class="modal-btn" onclick="submitForgot()"><i class="fas fa-paper-plane"></i> Send Reset Email</button>
         </div>
-        <div id="forgotResult" style="display:none;"></div>
+
+        <div id="sendingState" class="sending-state" style="display:none;">
+            <i class="fas fa-spinner"></i>
+            Sending email...
+        </div>
+
+        <div id="sentState" class="sent-state" style="display:none;">
+            <i class="fas fa-check-circle"></i>
+            <h4>Email Sent!</h4>
+            <p>A temporary password has been sent to your registered email address. Check your inbox!</p>
+        </div>
+
+        <div id="errorState" style="display:none;margin-top:8px;">
+            <div class="error-msg" id="errorMsg"></div>
+            <button class="modal-btn" onclick="resetForgotForm()" style="background:#64748b;margin-top:6px;">Try Again</button>
+        </div>
+
         <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
     </div>
 </div>
@@ -118,46 +133,73 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
     <input type="hidden" name="action" value="login">
 </form>
 
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
+// EmailJS config
+emailjs.init('iF0sQnadyLlD-2URo');
+
 function closeForgot() {
     document.getElementById('forgotModal').classList.remove('show');
-    document.getElementById('forgotForm').style.display='block';
-    document.getElementById('forgotResult').style.display='none';
-    document.getElementById('forgotResult').innerHTML='';
+    setTimeout(resetForgotForm, 300);
 }
+
+function resetForgotForm() {
+    document.getElementById('forgotForm').style.display = 'block';
+    document.getElementById('sendingState').style.display = 'none';
+    document.getElementById('sentState').style.display = 'none';
+    document.getElementById('errorState').style.display = 'none';
+    document.getElementById('forgotUser').value = '';
+}
+
 document.getElementById('forgotModal').addEventListener('click', e => {
-    if(e.target.id==='forgotModal') closeForgot();
+    if (e.target.id === 'forgotModal') closeForgot();
 });
 
-function submitForgot(e) {
-    e.preventDefault();
-    const user = document.getElementById('forgotUser').value.trim();
-    if (!user) return;
+function submitForgot() {
+    const username = document.getElementById('forgotUser').value.trim();
+    if (!username) { alert('Please enter your username.'); return; }
+
+    document.getElementById('forgotForm').style.display = 'none';
+    document.getElementById('sendingState').style.display = 'block';
+
     fetch('forgot_password.php', {
-        method:'POST',
-        headers:{'Content-Type':'application/x-www-form-urlencoded'},
-        body:'username='+encodeURIComponent(user)
-    }).then(r=>r.json()).then(d=>{
-        document.getElementById('forgotForm').style.display='none';
-        const res = document.getElementById('forgotResult');
-        res.style.display='block';
-        if(d.success){
-            res.innerHTML=`<div class="reset-box">
-                <div style="color:#2ecc71;font-size:22px;margin-bottom:8px;">✅ Password Reset!</div>
-                <p>Your temporary password is:</p>
-                <div class="tmp-pass">${d.temp_pass}</div>
-                <p>Login with this password and change it in settings.</p>
-            </div>`;
-        } else {
-            res.innerHTML=`<div class="error-msg">${d.error}</div>
-            <button class="modal-btn" onclick="document.getElementById('forgotForm').style.display='block';this.parentElement.style.display='none';" style="margin-top:10px;">Try Again</button>`;
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'username=' + encodeURIComponent(username)
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (!d.success) {
+            document.getElementById('sendingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMsg').textContent = d.error;
+            return;
         }
+
+        // Send email via EmailJS
+        return emailjs.send('service_kaimwbk', 'i1kf18p', {
+            email:    d.email,
+            to_name:  d.username,
+            passcode: d.temp_pass,
+            time:     '15 minutes'
+        });
+    })
+    .then(() => {
+        document.getElementById('sendingState').style.display = 'none';
+        document.getElementById('sentState').style.display = 'block';
+    })
+    .catch(err => {
+        console.error('EmailJS error:', err);
+        document.getElementById('sendingState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'block';
+        document.getElementById('errorMsg').textContent = '❌ Failed to send email. Please try again.';
     });
 }
 
+// Google
 function triggerGoogle() {
-    if (typeof google === 'undefined') { alert('Google Sign-In not loaded. Check your internet connection.'); return; }
+    if (typeof google === 'undefined') { alert('Google Sign-In not loaded.'); return; }
     google.accounts.id.initialize({
         client_id: '<?= getenv("GOOGLE_CLIENT_ID") ?: "" ?>',
         callback: (resp) => {
@@ -165,11 +207,7 @@ function triggerGoogle() {
             document.getElementById('googleForm').submit();
         }
     });
-    google.accounts.id.prompt((n) => {
-        if (n.isNotDisplayed() || n.isSkippedMoment()) {
-            google.accounts.id.renderButton(document.createElement('div'), {});
-        }
-    });
+    google.accounts.id.prompt();
 }
 </script>
 </body>
