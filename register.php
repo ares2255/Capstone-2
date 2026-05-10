@@ -71,27 +71,20 @@
     <input type="hidden" name="action" value="register">
 </form>
 
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-const GOOGLE_CLIENT_ID = '<?= getenv("GOOGLE_CLIENT_ID") ?: "YOUR_GOOGLE_CLIENT_ID_HERE" ?>';
+const GOOGLE_CLIENT_ID    = '647107465413-18hemskapc88e4gil1a9g009qpll9074.apps.googleusercontent.com';
+const GOOGLE_REDIRECT_URI = 'https://capstone-2-production-c904.up.railway.app/google_callback.php';
 
 function triggerGoogle() {
-    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
-        alert('Google Sign-In is not configured. Please set your GOOGLE_CLIENT_ID in the server environment variables.');
-        return;
-    }
-    if (typeof google === 'undefined') {
-        alert('Google Sign-In script failed to load. Check your internet connection.');
-        return;
-    }
-    google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (resp) => {
-            document.getElementById('googleCredential').value = resp.credential;
-            document.getElementById('googleForm').submit();
-        }
+    const params = new URLSearchParams({
+        client_id:     GOOGLE_CLIENT_ID,
+        redirect_uri:  GOOGLE_REDIRECT_URI,
+        response_type: 'code',
+        scope:         'openid email profile',
+        access_type:   'online',
+        state:         'register',
     });
-    google.accounts.id.prompt();
+    window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
 }
 </script>
 </body>
