@@ -196,9 +196,10 @@ async function submitForgot() {
         // {{to_name}}  → username
         // {{passcode}} → temporary password
         await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-            to_email: d.email,
+            email:    d.email,
             to_name:  d.username,
             passcode: d.temp_pass,
+            time:     '15 minutes',
         });
 
         document.getElementById('sendingState').style.display = 'none';
