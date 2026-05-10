@@ -25,17 +25,26 @@ if (empty($user['email'])) {
     exit();
 }
 
-// Generate temp password
-$words  = ['Blue','Red','Fast','Star','Moon','Fire','Sky','Rock','Bolt','Wave'];
-$temp   = $words[array_rand($words)] . rand(100, 999);
-$hashed = password_hash($temp, PASSWORD_DEFAULT);
+// Generate 6-digit reset code
+$code        = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+$hashed_code = password_hash($code, PASSWORD_DEFAULT);
+$expires_at  = date('Y-m-d H:i:s', strtotime('+15 minutes'));
 
-$pdo->prepare("UPDATE users SET password = :p WHERE id = :id")
-    ->execute([':p' => $hashed, ':id' => $user['id']]);
+// Ensure reset_codes table exists, then upsert
+$pdo->exec("CREATE TABLE IF NOT EXISTS reset_codes (
+    user_id     INT PRIMARY KEY,
+    code_hash   VARCHAR(255) NOT NULL,
+    expires_at  TIMESTAMP NOT NULL
+)");
+
+// Delete any existing code for this user, then insert fresh
+$pdo->prepare("DELETE FROM reset_codes WHERE user_id = :id")->execute([':id' => $user['id']]);
+$pdo->prepare("INSERT INTO reset_codes (user_id, code_hash, expires_at) VALUES (:id, :hash, :exp)")
+    ->execute([':id' => $user['id'], ':hash' => $hashed_code, ':exp' => $expires_at]);
 
 echo json_encode([
-    'success'   => true,
-    'email'     => $user['email'],
-    'username'  => $user['username'],
-    'temp_pass' => $temp
+    'success'  => true,
+    'email'    => $user['email'],
+    'username' => $user['username'],
+    'code'     => $code          // sent via EmailJS to the user's email
 ]);
