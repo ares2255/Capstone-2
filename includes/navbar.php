@@ -1,39 +1,14 @@
 <?php
 $current = basename($_SERVER['PHP_SELF']);
-$overtimeCount = 0;
-$overtimePCs = [];
-try {
-    if (!isset($pdo)) {
-        $dbPath = __DIR__ . '/../config/db.php';
-        if (file_exists($dbPath)) include $dbPath;
-    }
-    if (isset($pdo)) {
-        $stmt = $pdo->query("
-            SELECT p.name,
-                   EXTRACT(EPOCH FROM (NOW() - s.start_time))/60 AS elapsed_mins,
-                   s.time_limit
-            FROM sessions s
-            JOIN pcs p ON p.id = s.pc_id
-            WHERE s.end_time IS NULL
-              AND s.time_limit IS NOT NULL
-              AND s.time_limit > 0
-              AND EXTRACT(EPOCH FROM (NOW() - s.start_time))/60 > s.time_limit
-        ");
-        foreach ($stmt->fetchAll() as $row) {
-            $overtimeCount++;
-            $overtimePCs[] = htmlspecialchars($row['name']);
-        }
-    }
-} catch (Exception $e) {}
 ?>
-<?php if ($overtimeCount > 0): ?>
-<div class="global-overtime-bar">
+<!-- Global Overtime Bar (shown by JS when any PC goes overtime) -->
+<div class="global-overtime-bar" id="globalOvertimeBar" style="display:none;">
     <span>⚠</span>
-    OVERTIME — <?= implode(', ', $overtimePCs) ?> exceeded time limit!
+    <span id="overtimeBarText">OVERTIME ALERT — PC(s) exceeded time limit!</span>
     <a href="counter.php" class="overtime-link">Go to Counter →</a>
     <span>⚠</span>
 </div>
-<?php endif; ?>
+
 <nav class="navbar">
     <a href="counter.php" class="nav-brand">
         <i class="fas fa-desktop"></i>
@@ -47,15 +22,17 @@ try {
         <a href="analytics.php" class="<?= $current=='analytics.php'?'active':'' ?>" style="<?= $current=='analytics.php'?'':'color:#2ecc71;' ?>"><i class="fas fa-chart-line"></i> Analytics</a>
     </div>
     <div class="nav-right">
-        <?php if ($overtimeCount > 0): ?>
-        <span class="nav-overtime-badge"><i class="fas fa-exclamation-triangle"></i> <?= $overtimeCount ?> OVERTIME</span>
-        <?php endif; ?>
+        <span class="nav-overtime-badge" id="navOvertimeBadge" style="display:none;">
+            <i class="fas fa-exclamation-triangle"></i> <span id="navOvertimeCount">0</span> OVERTIME
+        </span>
         <span class="nav-time" id="navTime"></span>
         <span class="nav-user"><i class="fas fa-user"></i> <?= htmlspecialchars($display_user ?? '') ?></span>
         <a href="logout.php" class="logout-btn">Logout</a>
     </div>
 </nav>
+
 <script>
+// Clock
 function updateTime(){
     const now=new Date();
     let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
@@ -66,9 +43,10 @@ function updateTime(){
 }
 updateTime(); setInterval(updateTime,1000);
 
-<?php if ($overtimeCount > 0): ?>
-// Overtime alarm sound
+// Global overtime checker — polls the server every 10s
 let _alarmGoing=false;
+let _overtimeNames=[];
+
 function _beep(){
     try{
         const ctx=new(window.AudioContext||window.webkitAudioContext)();
@@ -81,15 +59,37 @@ function _beep(){
         setTimeout(_beep,3000);
     }catch(e){}
 }
+
 function _startAlarm(){
     if(!_alarmGoing){_alarmGoing=true;_beep();}
-    document.removeEventListener('click',_startAlarm);
-    document.removeEventListener('keydown',_startAlarm);
 }
-document.addEventListener('click',_startAlarm);
-document.addEventListener('keydown',_startAlarm);
-setTimeout(()=>{if(!_alarmGoing)_startAlarm();},500);
-<?php endif; ?>
 
-setTimeout(()=>location.reload(),30000);
+function checkOvertime(){
+    fetch('check_overtime.php')
+        .then(r=>r.json())
+        .then(d=>{
+            const bar=document.getElementById('globalOvertimeBar');
+            const badge=document.getElementById('navOvertimeBadge');
+            const count=document.getElementById('navOvertimeCount');
+            const text=document.getElementById('overtimeBarText');
+            if(d.count>0){
+                bar.style.display='flex';
+                badge.style.display='flex';
+                count.textContent=d.count;
+                text.textContent='OVERTIME — '+d.names.join(', ')+' exceeded time limit!';
+                if(!_alarmGoing) _startAlarm();
+            } else {
+                bar.style.display='none';
+                badge.style.display='none';
+            }
+        })
+        .catch(()=>{});
+}
+
+// Check immediately and every 10 seconds
+checkOvertime();
+setInterval(checkOvertime, 10000);
+
+// Auto-reload page every 5 minutes
+setTimeout(()=>location.reload(), 300000);
 </script>
