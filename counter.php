@@ -129,6 +129,8 @@ background-image:linear-gradient(rgba(19,39,66,.25) 1px,transparent 1px),linear-
 }
 .overtime-badge.show{display:inline-block;}
 
+/* Alarm Bar */
+/* alarm-bar moved to navbar.php */
 
 /* Modal */
 .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
@@ -186,6 +188,8 @@ align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;}
 </head>
 <body>
 <?php include 'includes/navbar.php'; ?>
+
+<!-- alarm bar now in navbar.php -->
 
 <div class="page-wrap">
     <div class="page-header">
@@ -348,6 +352,28 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
     }
     tick(); setInterval(tick, 1000);
 });
+
+// ── Alarm ──
+setInterval(() => {
+    if (anyOvertime) {
+        document.getElementById('globalAlarmBar').classList.add('show');
+        if (!alarmPlaying) {
+            alarmPlaying = true;
+            function beep() {
+                if (!alarmPlaying) return;
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const o = ctx.createOscillator(), g = ctx.createGain();
+                o.connect(g); g.connect(ctx.destination);
+                o.type = 'square'; o.frequency.value = 900;
+                g.gain.setValueAtTime(0.25, ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                o.start(); o.stop(ctx.currentTime + 0.3);
+                setTimeout(beep, 2500);
+            }
+            beep();
+        }
+    }
+}, 1000);
 
 // ── Modal functions ──
 function openStartModal(id, name) {
