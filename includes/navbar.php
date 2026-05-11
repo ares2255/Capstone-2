@@ -1,7 +1,5 @@
 <?php
 $current = basename($_SERVER['PHP_SELF']);
-
-// Safely check for overtime PCs
 $overtimeCount = 0;
 $overtimePCs = [];
 try {
@@ -11,22 +9,22 @@ try {
     }
     if (isset($pdo)) {
         $stmt = $pdo->query("
-            SELECT p.name, s.start_time, s.time_limit
+            SELECT p.name,
+                   EXTRACT(EPOCH FROM (NOW() - s.start_time))/60 AS elapsed_mins,
+                   s.time_limit
             FROM sessions s
             JOIN pcs p ON p.id = s.pc_id
-            WHERE s.end_time IS NULL AND s.time_limit IS NOT NULL
+            WHERE s.end_time IS NULL
+              AND s.time_limit IS NOT NULL
+              AND s.time_limit > 0
+              AND EXTRACT(EPOCH FROM (NOW() - s.start_time))/60 > s.time_limit
         ");
         foreach ($stmt->fetchAll() as $row) {
-            $elapsed = (time() - strtotime($row['start_time'])) / 60;
-            if ($elapsed > (int)$row['time_limit']) {
-                $overtimeCount++;
-                $overtimePCs[] = htmlspecialchars($row['name']);
-            }
+            $overtimeCount++;
+            $overtimePCs[] = htmlspecialchars($row['name']);
         }
     }
-} catch (Exception $e) {
-    // Silently fail — never break the navbar
-}
+} catch (Exception $e) {}
 ?>
 <?php if ($overtimeCount > 0): ?>
 <div class="global-overtime-bar">
@@ -68,30 +66,30 @@ function updateTime(){
 }
 updateTime(); setInterval(updateTime,1000);
 
-// Overtime alarm on all pages
 <?php if ($overtimeCount > 0): ?>
-let _alarmGoing = false;
-function _beep() {
-    try {
-        const ctx = new (window.AudioContext||window.webkitAudioContext)();
-        const o=ctx.createOscillator(), g=ctx.createGain();
-        o.connect(g); g.connect(ctx.destination);
-        o.type='square'; o.frequency.value=880;
+// Overtime alarm sound
+let _alarmGoing=false;
+function _beep(){
+    try{
+        const ctx=new(window.AudioContext||window.webkitAudioContext)();
+        const o=ctx.createOscillator(),g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.type='square';o.frequency.value=880;
         g.gain.setValueAtTime(0.3,ctx.currentTime);
         g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
-        o.start(); o.stop(ctx.currentTime+0.4);
-        setTimeout(_beep, 3000);
-    } catch(e){}
+        o.start();o.stop(ctx.currentTime+0.4);
+        setTimeout(_beep,3000);
+    }catch(e){}
 }
 function _startAlarm(){
-    if(!_alarmGoing){ _alarmGoing=true; _beep(); }
+    if(!_alarmGoing){_alarmGoing=true;_beep();}
     document.removeEventListener('click',_startAlarm);
     document.removeEventListener('keydown',_startAlarm);
 }
 document.addEventListener('click',_startAlarm);
 document.addEventListener('keydown',_startAlarm);
-setTimeout(()=>{ if(!_alarmGoing) _startAlarm(); }, 500);
+setTimeout(()=>{if(!_alarmGoing)_startAlarm();},500);
 <?php endif; ?>
 
-setTimeout(()=>location.reload(), 30000);
+setTimeout(()=>location.reload(),30000);
 </script>
