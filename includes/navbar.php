@@ -21,7 +21,7 @@ $current = basename($_SERVER['PHP_SELF']);
     user-select:none;
 }
 .alarm-bar.show{display:block;}
-.alarm-bar i{margin:0 8px;font-size:16px;}
+.alarm-bar i{margin:0 8px;}
 @keyframes alarmSlide{
     0%{background-position:0% 50%}
     100%{background-position:300% 50%}
@@ -29,9 +29,7 @@ $current = basename($_SERVER['PHP_SELF']);
 body.alarm-visible .page-wrap,
 body.alarm-visible .wrap,
 body.alarm-visible .container,
-body.alarm-visible main {
-    margin-top:48px !important;
-}
+body.alarm-visible main{margin-top:48px !important;}
 </style>
 
 <nav class="navbar">
@@ -57,12 +55,12 @@ body.alarm-visible main {
 <div class="alarm-bar" id="globalAlarmBar" onclick="window.location.href='counter.php'">
     <i class="fas fa-exclamation-triangle"></i>
     ⚠ OVERTIME ALERT — <span id="overtimeMsg">One or more PCs have exceeded their time limit!</span>
-    Click here to attend to them.
+    Click here to attend.
     <i class="fas fa-exclamation-triangle"></i>
 </div>
 
 <script>
-// ── Clock ─────────────────────────────────────────────────────────────────────
+// ── Clock ─────────────────────────────────────────────────────────────────
 (function(){
     function tick(){
         var n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();
@@ -73,45 +71,97 @@ body.alarm-visible main {
     tick(); setInterval(tick,1000);
 })();
 
-// ── Beep — same pattern as counter.php (new AudioContext each call) ──────────
-var _alarmOn=false, _beepStarted=false;
+// ── Audio — exact same logic as original counter.php ─────────────────────
+// Create ONE shared context and unlock it on first user gesture
+var _sharedCtx = null;
+var _audioUnlocked = false;
+var _alarmPlaying = false;
+var _pendingBeep = false;
 
-function beep(){
-    if(!_alarmOn) return;
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type = 'square'; o.frequency.value = 900;
-    g.gain.setValueAtTime(0.25, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-    o.start(); o.stop(ctx.currentTime + 0.3);
-    setTimeout(beep, 2500);
+function _getCtx(){
+    if(!_sharedCtx){
+        try{ _sharedCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+    }
+    return _sharedCtx;
 }
 
-// ── Overtime polling ──────────────────────────────────────────────────────────
-// Use window.location.origin so URL is ALWAYS correct on any page/host
+function _doBeep(){
+    if(!_alarmPlaying) return;
+    var ctx = _getCtx();
+    if(!ctx) return;
+    // If still suspended, resume then beep
+    if(ctx.state === 'suspended'){
+        ctx.resume().then(function(){ _actualBeep(ctx); });
+    } else {
+        _actualBeep(ctx);
+    }
+    setTimeout(_doBeep, 2500);
+}
+
+function _actualBeep(ctx){
+    try{
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'square'; o.frequency.value = 900;
+        g.gain.setValueAtTime(0.25, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        o.start(); o.stop(ctx.currentTime + 0.3);
+    }catch(e){}
+}
+
+// Pre-create context and unlock it on the very first user interaction
+// This makes it ready BEFORE overtime is detected
+(function(){
+    function unlock(){
+        _getCtx();
+        if(_sharedCtx && _sharedCtx.state === 'suspended'){
+            _sharedCtx.resume();
+        }
+        _audioUnlocked = true;
+        // If alarm was waiting for unlock, start now
+        if(_pendingBeep && _alarmPlaying){
+            _pendingBeep = false;
+            _doBeep();
+        }
+    }
+    // Listen on document AND navbar links so any navigation click unlocks it
+    ['mousedown','keydown','touchstart'].forEach(function(ev){
+        document.addEventListener(ev, unlock, {once:true, capture:true, passive:true});
+    });
+    // Also try silent unlock immediately — works in some browsers
+    setTimeout(function(){
+        var ctx = _getCtx();
+        if(ctx && ctx.state === 'running') _audioUnlocked = true;
+    }, 100);
+})();
+
+// ── Overtime polling ──────────────────────────────────────────────────────
 function checkOvertime(){
     var url = window.location.origin + '/check_overtime.php';
     fetch(url, {cache:'no-store'})
         .then(function(r){ return r.json(); })
         .then(function(d){
-            var bar=document.getElementById('globalAlarmBar');
-            var msg=document.getElementById('overtimeMsg');
+            var bar = document.getElementById('globalAlarmBar');
+            var msg = document.getElementById('overtimeMsg');
             if(d.overtime){
-                var cnt=d.count;
-                if(msg) msg.textContent=cnt+' PC'+(cnt>1?'s are':' is')+' past the time limit!';
+                var cnt = d.count;
+                if(msg) msg.textContent = cnt+' PC'+(cnt>1?'s are':' is')+' past the time limit!';
                 bar.classList.add('show');
                 document.body.classList.add('alarm-visible');
-                if(!_alarmOn){
-                    _alarmOn=true;
-                    _beepStarted=true;
-                    beep();
+                if(!_alarmPlaying){
+                    _alarmPlaying = true;
+                    if(_audioUnlocked){
+                        _doBeep();
+                    } else {
+                        // Mark pending — will fire as soon as user touches anything
+                        _pendingBeep = true;
+                    }
                 }
             } else {
                 bar.classList.remove('show');
                 document.body.classList.remove('alarm-visible');
-                _alarmOn=false;
-                _beepStarted=false;
+                _alarmPlaying = false;
+                _pendingBeep = false;
             }
         })
         .catch(function(e){ console.warn('Overtime check error:', e); });
