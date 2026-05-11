@@ -73,7 +73,7 @@ body.alarm-visible main {
 })();
 
 // ── Beep via Web Audio ────────────────────────────────────────────────────────
-var _ctx=null, _alarmOn=false;
+var _ctx=null, _alarmOn=false, _unlocked=false;
 
 function _getCtx(){
     if(!_ctx){ try{_ctx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){} }
@@ -81,22 +81,43 @@ function _getCtx(){
     return _ctx;
 }
 
-// Unlock audio on first user interaction
-document.addEventListener('click',function u(){_getCtx();document.removeEventListener('click',u);},{capture:true,once:true});
-document.addEventListener('keydown',function u(){_getCtx();document.removeEventListener('keydown',u);},{capture:true,once:true});
+// Try to create context immediately (works in some browsers without interaction)
+try{ _ctx=new(window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+
+// Unlock on ANY interaction — then immediately beep if alarm is active
+function _unlock(){
+    if(_unlocked) return;
+    _unlocked=true;
+    _getCtx();
+    if(_alarmOn) _doBeep();
+}
+['click','keydown','mousedown','touchstart','scroll'].forEach(function(ev){
+    document.addEventListener(ev,_unlock,{capture:true,passive:true});
+});
 
 function _doBeep(){
     if(!_alarmOn) return;
-    var ctx=_getCtx(); if(!ctx){setTimeout(_doBeep,3000);return;}
+    var ctx=_getCtx();
+    if(!ctx || ctx.state==='suspended'){
+        // Not unlocked yet — retry after 1s
+        setTimeout(_doBeep,1000);
+        return;
+    }
     try{
-        var o=ctx.createOscillator(),g=ctx.createGain();
-        o.connect(g);g.connect(ctx.destination);
-        o.type='square';o.frequency.value=880;
-        g.gain.setValueAtTime(0.35,ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.45);
-        o.start(ctx.currentTime);o.stop(ctx.currentTime+0.45);
+        // Two-tone urgent beep: high then low
+        function tone(freq, startT, dur){
+            var o=ctx.createOscillator(),g=ctx.createGain();
+            o.connect(g);g.connect(ctx.destination);
+            o.type='square';o.frequency.value=freq;
+            g.gain.setValueAtTime(0.3,startT);
+            g.gain.exponentialRampToValueAtTime(0.0001,startT+dur);
+            o.start(startT);o.stop(startT+dur);
+        }
+        var t=ctx.currentTime;
+        tone(1000,t,0.18);
+        tone(700,t+0.22,0.18);
     }catch(e){}
-    setTimeout(_doBeep,3000);
+    setTimeout(_doBeep,2500);
 }
 
 // ── Overtime polling ──────────────────────────────────────────────────────────
