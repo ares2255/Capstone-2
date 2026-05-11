@@ -71,35 +71,38 @@ body.alarm-visible main{margin-top:48px !important;}
     tick(); setInterval(tick,1000);
 })();
 
-// ── Audio — exact same logic as original counter.php ─────────────────────
-// Create ONE shared context and unlock it on first user gesture
-var _sharedCtx = null;
-var _audioUnlocked = false;
+// ── Audio ────────────────────────────────────────────────────────────────
 var _alarmPlaying = false;
-var _pendingBeep = false;
+var _ctx = null;
 
-function _getCtx(){
-    if(!_sharedCtx){
-        try{ _sharedCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
-    }
-    return _sharedCtx;
-}
-
-function _doBeep(){
-    if(!_alarmPlaying) return;
-    var ctx = _getCtx();
-    if(!ctx) return;
-    // If still suspended, resume then beep
-    if(ctx.state === 'suspended'){
-        ctx.resume().then(function(){ _actualBeep(ctx); });
-    } else {
-        _actualBeep(ctx);
-    }
-    setTimeout(_doBeep, 2500);
-}
-
-function _actualBeep(ctx){
+// Play a completely silent buffer — this counts as user-gesture audio
+// and unlocks the context for all future beeps
+function _unlock(){
+    if(_ctx) return;
     try{
+        _ctx = new (window.AudioContext||window.webkitAudioContext)();
+        // Play 1 sample of silence to activate the context
+        var buf = _ctx.createBuffer(1,1,22050);
+        var src = _ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(_ctx.destination);
+        src.start(0);
+    }catch(e){}
+}
+
+// Unlock on page load via the navigation click that brought us here,
+// and on any subsequent interaction
+document.addEventListener('click',    _unlock, {once:true, capture:true});
+document.addEventListener('keydown',  _unlock, {once:true, capture:true});
+document.addEventListener('mousedown',_unlock, {once:true, capture:true});
+// Try immediately — works when browser tab is already active
+setTimeout(_unlock, 50);
+
+function _beep(){
+    if(!_alarmPlaying) return;
+    try{
+        // Always create fresh ctx per beep — same as original counter.php
+        var ctx = new (window.AudioContext||window.webkitAudioContext)();
         var o = ctx.createOscillator(), g = ctx.createGain();
         o.connect(g); g.connect(ctx.destination);
         o.type = 'square'; o.frequency.value = 900;
@@ -107,33 +110,8 @@ function _actualBeep(ctx){
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
         o.start(); o.stop(ctx.currentTime + 0.3);
     }catch(e){}
+    setTimeout(_beep, 2500);
 }
-
-// Pre-create context and unlock it on the very first user interaction
-// This makes it ready BEFORE overtime is detected
-(function(){
-    function unlock(){
-        _getCtx();
-        if(_sharedCtx && _sharedCtx.state === 'suspended'){
-            _sharedCtx.resume();
-        }
-        _audioUnlocked = true;
-        // If alarm was waiting for unlock, start now
-        if(_pendingBeep && _alarmPlaying){
-            _pendingBeep = false;
-            _doBeep();
-        }
-    }
-    // Listen on document AND navbar links so any navigation click unlocks it
-    ['mousedown','keydown','touchstart'].forEach(function(ev){
-        document.addEventListener(ev, unlock, {once:true, capture:true, passive:true});
-    });
-    // Also try silent unlock immediately — works in some browsers
-    setTimeout(function(){
-        var ctx = _getCtx();
-        if(ctx && ctx.state === 'running') _audioUnlocked = true;
-    }, 100);
-})();
 
 // ── Overtime polling ──────────────────────────────────────────────────────
 function checkOvertime(){
@@ -150,18 +128,12 @@ function checkOvertime(){
                 document.body.classList.add('alarm-visible');
                 if(!_alarmPlaying){
                     _alarmPlaying = true;
-                    if(_audioUnlocked){
-                        _doBeep();
-                    } else {
-                        // Mark pending — will fire as soon as user touches anything
-                        _pendingBeep = true;
-                    }
+                    _beep();
                 }
             } else {
                 bar.classList.remove('show');
                 document.body.classList.remove('alarm-visible');
                 _alarmPlaying = false;
-                _pendingBeep = false;
             }
         })
         .catch(function(e){ console.warn('Overtime check error:', e); });
