@@ -54,10 +54,20 @@ body.alarm-visible main {
 </nav>
 
 <!-- Global Overtime Alarm Bar -->
-<div class="alarm-bar" id="globalAlarmBar" onclick="window.location.href='counter.php'">
-    <i class="fas fa-exclamation-triangle"></i>
-    ⚠ OVERTIME ALERT — One or more PCs have exceeded their time limit! Click here to attend to them.
-    <i class="fas fa-exclamation-triangle"></i>
+<div class="alarm-bar" id="globalAlarmBar">
+    <span onclick="window.location.href='counter.php'" style="cursor:pointer;">
+        <i class="fas fa-exclamation-triangle"></i>
+        ⚠ OVERTIME ALERT — <span id="overtimeMsg">One or more PCs have exceeded their time limit!</span>
+        Click counter to attend.
+        <i class="fas fa-exclamation-triangle"></i>
+    </span>
+    &nbsp;&nbsp;
+    <button id="soundEnableBtn" onclick="enableSound()" style="
+        background:#fff;color:#c0392b;border:none;padding:4px 12px;
+        border-radius:6px;font-weight:800;font-size:13px;cursor:pointer;
+        margin-left:8px;vertical-align:middle;">
+        🔔 Enable Sound
+    </button>
 </div>
 
 <script>
@@ -73,51 +83,51 @@ body.alarm-visible main {
 })();
 
 // ── Beep via Web Audio ────────────────────────────────────────────────────────
-var _ctx=null, _alarmOn=false, _unlocked=false;
+var _ctx=null, _alarmOn=false, _beepLooping=false;
 
-function _getCtx(){
-    if(!_ctx){ try{_ctx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){} }
-    if(_ctx && _ctx.state==='suspended') _ctx.resume();
+function _initCtx(){
+    if(_ctx) return _ctx;
+    try{ _ctx=new(window.AudioContext||window.webkitAudioContext)(); }catch(e){}
     return _ctx;
 }
 
-// Try to create context immediately (works in some browsers without interaction)
-try{ _ctx=new(window.AudioContext||window.webkitAudioContext)(); }catch(e){}
-
-// Unlock on ANY interaction — then immediately beep if alarm is active
-function _unlock(){
-    if(_unlocked) return;
-    _unlocked=true;
-    _getCtx();
-    if(_alarmOn) _doBeep();
-}
-['click','keydown','mousedown','touchstart','scroll'].forEach(function(ev){
-    document.addEventListener(ev,_unlock,{capture:true,passive:true});
-});
-
-function _doBeep(){
-    if(!_alarmOn) return;
-    var ctx=_getCtx();
-    if(!ctx || ctx.state==='suspended'){
-        // Not unlocked yet — retry after 1s
-        setTimeout(_doBeep,1000);
-        return;
-    }
+function _playOnce(){
+    var ctx=_initCtx();
+    if(!ctx) return;
+    if(ctx.state==='suspended'){ ctx.resume(); }
     try{
-        // Two-tone urgent beep: high then low
-        function tone(freq, startT, dur){
+        function tone(freq,st,dur){
             var o=ctx.createOscillator(),g=ctx.createGain();
             o.connect(g);g.connect(ctx.destination);
             o.type='square';o.frequency.value=freq;
-            g.gain.setValueAtTime(0.3,startT);
-            g.gain.exponentialRampToValueAtTime(0.0001,startT+dur);
-            o.start(startT);o.stop(startT+dur);
+            g.gain.setValueAtTime(0.4,st);
+            g.gain.exponentialRampToValueAtTime(0.0001,st+dur);
+            o.start(st);o.stop(st+dur);
         }
         var t=ctx.currentTime;
-        tone(1000,t,0.18);
-        tone(700,t+0.22,0.18);
-    }catch(e){}
-    setTimeout(_doBeep,2500);
+        tone(1000,t,0.15);
+        tone(700,t+0.18,0.15);
+        tone(1000,t+0.36,0.15);
+    }catch(e){ console.warn('beep err',e); }
+}
+
+function _startBeepLoop(){
+    if(_beepLooping) return;
+    _beepLooping=true;
+    (function loop(){
+        if(!_alarmOn){ _beepLooping=false; return; }
+        _playOnce();
+        setTimeout(loop,2500);
+    })();
+}
+
+// Sound enable button — shown inside the alarm bar
+function enableSound(){
+    _initCtx();
+    if(_ctx && _ctx.state==='suspended') _ctx.resume().then(function(){ _playOnce(); });
+    else _playOnce();
+    document.getElementById('soundEnableBtn').style.display='none';
+    _startBeepLoop();
 }
 
 // ── Overtime polling ──────────────────────────────────────────────────────────
@@ -128,18 +138,22 @@ function checkOvertime(){
         .then(function(r){ return r.json(); })
         .then(function(d){
             var bar=document.getElementById('globalAlarmBar');
+            var msg=document.getElementById('overtimeMsg');
             if(d.overtime){
                 var cnt=d.count;
-                bar.innerHTML='<i class="fas fa-exclamation-triangle"></i>'
-                    +' ⚠ OVERTIME ALERT — '+cnt+' PC'+(cnt>1?'s are':' is')+' past the time limit! Click here to attend.'
-                    +' <i class="fas fa-exclamation-triangle"></i>';
+                if(msg) msg.textContent=cnt+' PC'+(cnt>1?'s are':' is')+' past the time limit!';
                 bar.classList.add('show');
                 document.body.classList.add('alarm-visible');
-                if(!_alarmOn){ _alarmOn=true; _doBeep(); }
+                if(!_alarmOn){
+                    _alarmOn=true;
+                    // Auto-start beep (works if AudioContext already unlocked)
+                    _startBeepLoop();
+                }
             } else {
                 bar.classList.remove('show');
                 document.body.classList.remove('alarm-visible');
                 _alarmOn=false;
+                _beepLooping=false;
             }
         })
         .catch(function(e){ console.warn('Overtime check error:', e); });
