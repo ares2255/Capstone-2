@@ -1,10 +1,5 @@
 <?php
 $current = basename($_SERVER['PHP_SELF']);
-// Build absolute URL to check_overtime.php that works on any host/path
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host     = $_SERVER['HTTP_HOST'];
-$dir      = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
-$overtime_url = $protocol . '://' . $host . $dir . '/check_overtime.php';
 ?>
 <style>
 .alarm-bar{
@@ -66,87 +61,67 @@ body.alarm-visible main {
 </div>
 
 <script>
-// ── Clock ─────────────────────────────────────────────────────────────────
-function updateTime(){
-    const now=new Date();
-    let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
-    const ap=h>=12?'PM':'AM'; h=h%12||12;
-    document.getElementById('navTime').textContent=
-        String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+' '+ap;
-}
-updateTime(); setInterval(updateTime,1000);
+// ── Clock ─────────────────────────────────────────────────────────────────────
+(function(){
+    function tick(){
+        var n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();
+        var ap=h>=12?'PM':'AM'; h=h%12||12;
+        var el=document.getElementById('navTime');
+        if(el) el.textContent=(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ap;
+    }
+    tick(); setInterval(tick,1000);
+})();
 
-// ── Beep sound ────────────────────────────────────────────────────────────
-// Short WAV beep encoded as base64 data URI — no file needed, no unlock needed
-const BEEP_WAV = 'data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAA'+
-'ABAAEARKwAAIhYAQACABAAZGF0YTtvT18A'+
-'AAAAAAAA/////wAAAAAAAAD/////AAAAAAAAAP////8AAAAAAAAAAAAA';
+// ── Beep via Web Audio ────────────────────────────────────────────────────────
+var _ctx=null, _alarmOn=false;
 
-// Build a proper beep using Web Audio API — works after any user click
-let _ctx = null;
-let _alarmOn = false;
-let _audioUnlocked = false;
-
-// Unlock on first interaction
-document.addEventListener('click', function(){
-    if(_ctx && _ctx.state==='suspended') _ctx.resume();
-    _audioUnlocked = true;
-    if(_alarmOn) scheduleBeep();
-}, {capture:true});
-
-function getCtx(){
-    if(!_ctx){ try{ _ctx=new(window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+function _getCtx(){
+    if(!_ctx){ try{_ctx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){} }
     if(_ctx && _ctx.state==='suspended') _ctx.resume();
     return _ctx;
 }
 
-function doBeep(){
+// Unlock audio on first user interaction
+document.addEventListener('click',function u(){_getCtx();document.removeEventListener('click',u);},{capture:true,once:true});
+document.addEventListener('keydown',function u(){_getCtx();document.removeEventListener('keydown',u);},{capture:true,once:true});
+
+function _doBeep(){
     if(!_alarmOn) return;
-    const ctx = getCtx();
-    if(!ctx) { setTimeout(doBeep,3000); return; }
+    var ctx=_getCtx(); if(!ctx){setTimeout(_doBeep,3000);return;}
     try{
-        const o=ctx.createOscillator(), g=ctx.createGain();
-        o.connect(g); g.connect(ctx.destination);
-        o.type='square'; o.frequency.value=880;
-        g.gain.setValueAtTime(0.35, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.45);
-        o.start(ctx.currentTime);
-        o.stop(ctx.currentTime+0.45);
+        var o=ctx.createOscillator(),g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.type='square';o.frequency.value=880;
+        g.gain.setValueAtTime(0.35,ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.45);
+        o.start(ctx.currentTime);o.stop(ctx.currentTime+0.45);
     }catch(e){}
-    setTimeout(doBeep, 3000);
+    setTimeout(_doBeep,3000);
 }
 
-function scheduleBeep(){
-    if(_alarmOn) doBeep();
-}
-
-// ── Overtime polling ──────────────────────────────────────────────────────
-// URL is set by PHP so it's always correct regardless of page
-const _overtimeUrl = <?= json_encode($overtime_url) ?>;
-
+// ── Overtime polling ──────────────────────────────────────────────────────────
+// Use window.location.origin so URL is ALWAYS correct on any page/host
 function checkOvertime(){
-    fetch(_overtimeUrl, {cache:'no-store'})
-        .then(r=>r.json())
-        .then(d=>{
-            const bar = document.getElementById('globalAlarmBar');
+    var url = window.location.origin + '/check_overtime.php';
+    fetch(url, {cache:'no-store'})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+            var bar=document.getElementById('globalAlarmBar');
             if(d.overtime){
-                const cnt = d.count;
-                bar.innerHTML = '<i class="fas fa-exclamation-triangle"></i>'
+                var cnt=d.count;
+                bar.innerHTML='<i class="fas fa-exclamation-triangle"></i>'
                     +' ⚠ OVERTIME ALERT — '+cnt+' PC'+(cnt>1?'s are':' is')+' past the time limit! Click here to attend.'
                     +' <i class="fas fa-exclamation-triangle"></i>';
                 bar.classList.add('show');
                 document.body.classList.add('alarm-visible');
-                if(!_alarmOn){
-                    _alarmOn = true;
-                    doBeep(); // starts beep loop
-                }
+                if(!_alarmOn){ _alarmOn=true; _doBeep(); }
             } else {
                 bar.classList.remove('show');
                 document.body.classList.remove('alarm-visible');
-                _alarmOn = false;
+                _alarmOn=false;
             }
         })
-        .catch(e=>{ console.warn('Overtime check failed:', e); });
+        .catch(function(e){ console.warn('Overtime check error:', e); });
 }
 
 checkOvertime();
