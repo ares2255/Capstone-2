@@ -130,7 +130,15 @@ background-image:linear-gradient(rgba(19,39,66,.25) 1px,transparent 1px),linear-
 .overtime-badge.show{display:inline-block;}
 
 /* Alarm Bar */
-/* alarm-bar moved to navbar.php */
+.alarm-bar{
+    display:none;position:fixed;top:60px;left:0;right:0;
+    background:linear-gradient(90deg,#8b0000,#ff0000,#8b0000);
+    color:white;padding:10px 20px;text-align:center;
+    font-weight:700;font-size:14px;z-index:500;
+    letter-spacing:1px;animation:blink .7s infinite;
+    border-bottom:2px solid #ff4d4d;
+}
+.alarm-bar.show{display:block;}
 
 /* Modal */
 .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
@@ -189,7 +197,11 @@ align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;}
 <body>
 <?php include 'includes/navbar.php'; ?>
 
-<!-- alarm bar now in navbar.php -->
+<div class="alarm-bar" id="alarmBar">
+    <i class="fas fa-exclamation-triangle"></i> &nbsp;
+    OVERTIME ALERT — PC(s) have exceeded their time limit! Please attend to them.
+    &nbsp; <i class="fas fa-exclamation-triangle"></i>
+</div>
 
 <div class="page-wrap">
     <div class="page-header">
@@ -356,7 +368,7 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
 // ── Alarm ──
 setInterval(() => {
     if (anyOvertime) {
-        document.getElementById('globalAlarmBar').classList.add('show');
+        document.getElementById('alarmBar').classList.add('show');
         if (!alarmPlaying) {
             alarmPlaying = true;
             function beep() {
