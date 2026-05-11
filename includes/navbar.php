@@ -47,9 +47,6 @@ body.alarm-visible main{margin-top:48px !important;}
     <div class="nav-right">
         <span class="nav-time" id="navTime"></span>
         <span class="nav-user"><i class="fas fa-user"></i> <?= htmlspecialchars($display_user ?? '') ?></span>
-        <span id="soundBtn" onclick="toggleSound()" title="Toggle alarm sound" style="
-            cursor:pointer;font-size:18px;margin-right:4px;opacity:0.6;
-            transition:opacity .2s;" title="Click to enable alarm sound">🔇</span>
         <a href="logout.php" class="logout-btn">Logout</a>
     </div>
 </nav>
@@ -74,113 +71,56 @@ body.alarm-visible main{margin-top:48px !important;}
     tick(); setInterval(tick,1000);
 })();
 
-// ── Audio ────────────────────────────────────────────────────────────────
-var _alarmPlaying = false;
-var _ctx = null;
-var _ctxReady = false;
+// ── Audio — exact copy of working counter.php logic ─────────────────────
+let alarmPlaying = false;
 
-function _initAudio(){
-    if(_ctxReady) return;
-    try{
-        _ctx = new (window.AudioContext||window.webkitAudioContext)();
-        if(_ctx.state === 'running'){
-            _ctxReady = true;
-        } else {
-            _ctx.resume().then(function(){ _ctxReady = true; });
-        }
-    }catch(e){}
+function beep() {
+    if (!alarmPlaying) return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'square'; o.frequency.value = 900;
+    g.gain.setValueAtTime(0.25, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    o.start(); o.stop(ctx.currentTime + 0.3);
+    setTimeout(beep, 2500);
 }
-
-function _beepOnce(){
-    if(!_ctx || !_ctxReady) return;
-    try{
-        var o = _ctx.createOscillator();
-        var g = _ctx.createGain();
-        o.connect(g);
-        g.connect(_ctx.destination);
-        o.type = 'square';
-        o.frequency.value = 900;
-        g.gain.setValueAtTime(0.25, _ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, _ctx.currentTime + 0.3);
-        o.start(_ctx.currentTime);
-        o.stop(_ctx.currentTime + 0.3);
-    }catch(e){}
-}
-
-function _beepLoop(){
-    if(!_alarmPlaying) return;
-    _beepOnce();
-    setTimeout(_beepLoop, 2500);
-}
-
-// Unlock audio on first user interaction with the page
-function _unlockAudio(){
-    _initAudio();
-    if(_ctx && _ctx.state === 'suspended'){
-        _ctx.resume().then(function(){
-            _ctxReady = true;
-            if(_alarmPlaying) _beepLoop();
-        });
-    }
-}
-document.addEventListener('click',     _unlockAudio, {capture:true});
-document.addEventListener('mousedown', _unlockAudio, {capture:true});
-document.addEventListener('keydown',   _unlockAudio, {capture:true});
-document.addEventListener('touchstart',_unlockAudio, {capture:true, passive:true});
-
-// Try to init immediately on page load (works if site has had prior interaction)
-_initAudio();
-
-// Sound toggle button
-var _soundEnabled = true;
-function toggleSound(){
-    _soundEnabled = !_soundEnabled;
-    var btn = document.getElementById('soundBtn');
-    if(_soundEnabled){
-        btn.textContent = '🔔';
-        btn.style.opacity = '1';
-        _unlockAudio();
-        if(_alarmPlaying) _beepLoop();
-    } else {
-        btn.textContent = '🔇';
-        btn.style.opacity = '0.6';
-    }
-}
-// Override _beepOnce to respect toggle
-var _origBeepOnce = _beepOnce;
-_beepOnce = function(){
-    if(!_soundEnabled) return;
-    _origBeepOnce();
-};
 
 // ── Overtime polling ──────────────────────────────────────────────────────
+let anyOvertime = false;
+
 function checkOvertime(){
     var url = window.location.origin + '/check_overtime.php';
     fetch(url, {cache:'no-store'})
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-            var bar = document.getElementById('globalAlarmBar');
-            var msg = document.getElementById('overtimeMsg');
-            if(d.overtime){
-                var cnt = d.count;
-                if(msg) msg.textContent = cnt+' PC'+(cnt>1?'s are':' is')+' past the time limit!';
+        .then(r => r.json())
+        .then(d => {
+            const bar = document.getElementById('globalAlarmBar');
+            const msg = document.getElementById('overtimeMsg');
+            if (d.overtime) {
+                anyOvertime = true;
+                const cnt = d.count;
+                if (msg) msg.textContent = cnt + ' PC' + (cnt > 1 ? 's are' : ' is') + ' past the time limit!';
                 bar.classList.add('show');
                 document.body.classList.add('alarm-visible');
-                if(!_alarmPlaying){
-                    _alarmPlaying = true;
-                    if(_ctxReady){
-                        _beepLoop();
-                    }
-                    // If not ready yet, _unlockAudio() will start it on next interaction
-                }
             } else {
+                anyOvertime = false;
+                alarmPlaying = false;
                 bar.classList.remove('show');
                 document.body.classList.remove('alarm-visible');
-                _alarmPlaying = false;
             }
         })
-        .catch(function(e){ console.warn('Overtime check error:', e); });
+        .catch(e => console.warn('Overtime check error:', e));
 }
+
+// Mirror the exact setInterval pattern from counter.php
+setInterval(() => {
+    if (anyOvertime) {
+        if (!alarmPlaying) {
+            alarmPlaying = true;
+            beep();
+        }
+    }
+}, 1000);
 
 checkOvertime();
 setInterval(checkOvertime, 8000);
