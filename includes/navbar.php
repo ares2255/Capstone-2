@@ -1,11 +1,10 @@
 <?php
 $current = basename($_SERVER['PHP_SELF']);
-// Build absolute base path so fetch works from any page
-$base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
-// If navbar is included from a subfolder, go up one level
-if (strpos($current, '/includes/') !== false) {
-    $base = dirname($base);
-}
+// Build absolute URL to check_overtime.php that works on any host/path
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host     = $_SERVER['HTTP_HOST'];
+$dir      = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+$overtime_url = $protocol . '://' . $host . $dir . '/check_overtime.php';
 ?>
 <style>
 .alarm-bar{
@@ -66,13 +65,8 @@ body.alarm-visible main {
     <i class="fas fa-exclamation-triangle"></i>
 </div>
 
-<!-- Hidden audio beep (works without user gesture on most browsers) -->
-<audio id="overtimeAudio" preload="auto" style="display:none">
-    <source id="overtimeAudioSrc" src="" type="audio/mpeg">
-</audio>
-
 <script>
-// ── Clock ────────────────────────────────────────────────────────────────────
+// ── Clock ─────────────────────────────────────────────────────────────────
 function updateTime(){
     const now=new Date();
     let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
@@ -82,73 +76,77 @@ function updateTime(){
 }
 updateTime(); setInterval(updateTime,1000);
 
-// ── Audio beep via WebAudio (no file needed) ──────────────────────────────────
-let _audioCtx = null;
-let _alarmPlaying = false;
-let _beepScheduled = false;
+// ── Beep sound ────────────────────────────────────────────────────────────
+// Short WAV beep encoded as base64 data URI — no file needed, no unlock needed
+const BEEP_WAV = 'data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAA'+
+'ABAAEARKwAAIhYAQACABAAZGF0YTtvT18A'+
+'AAAAAAAA/////wAAAAAAAAD/////AAAAAAAAAP////8AAAAAAAAAAAAA';
 
-function getAudioCtx(){
-    if(!_audioCtx){
-        try { _audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){}
-    }
-    // Resume if suspended (browser autoplay policy)
-    if(_audioCtx && _audioCtx.state === 'suspended'){
-        _audioCtx.resume();
-    }
-    return _audioCtx;
+// Build a proper beep using Web Audio API — works after any user click
+let _ctx = null;
+let _alarmOn = false;
+let _audioUnlocked = false;
+
+// Unlock on first interaction
+document.addEventListener('click', function(){
+    if(_ctx && _ctx.state==='suspended') _ctx.resume();
+    _audioUnlocked = true;
+    if(_alarmOn) scheduleBeep();
+}, {capture:true});
+
+function getCtx(){
+    if(!_ctx){ try{ _ctx=new(window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+    if(_ctx && _ctx.state==='suspended') _ctx.resume();
+    return _ctx;
 }
 
-// Unlock audio on ANY user interaction with the page
-['click','keydown','touchstart'].forEach(evt=>{
-    document.addEventListener(evt, function unlock(){
-        getAudioCtx();
-        document.removeEventListener(evt, unlock);
-    }, {once:true});
-});
-
-function playBeep(){
-    if(!_alarmPlaying) return;
-    const ctx = getAudioCtx();
-    if(!ctx) return;
-    try {
+function doBeep(){
+    if(!_alarmOn) return;
+    const ctx = getCtx();
+    if(!ctx) { setTimeout(doBeep,3000); return; }
+    try{
         const o=ctx.createOscillator(), g=ctx.createGain();
         o.connect(g); g.connect(ctx.destination);
         o.type='square'; o.frequency.value=880;
-        g.gain.setValueAtTime(0.3, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.4);
+        g.gain.setValueAtTime(0.35, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.45);
         o.start(ctx.currentTime);
-        o.stop(ctx.currentTime+0.4);
-    } catch(e){}
-    setTimeout(playBeep, 3000);
+        o.stop(ctx.currentTime+0.45);
+    }catch(e){}
+    setTimeout(doBeep, 3000);
 }
 
-// ── Overtime polling ─────────────────────────────────────────────────────────
-// Use absolute path so it works from any page
-const _overtimeUrl = '/check_overtime.php';
+function scheduleBeep(){
+    if(_alarmOn) doBeep();
+}
+
+// ── Overtime polling ──────────────────────────────────────────────────────
+// URL is set by PHP so it's always correct regardless of page
+const _overtimeUrl = <?= json_encode($overtime_url) ?>;
 
 function checkOvertime(){
-    fetch(_overtimeUrl)
+    fetch(_overtimeUrl, {cache:'no-store'})
         .then(r=>r.json())
         .then(d=>{
             const bar = document.getElementById('globalAlarmBar');
             if(d.overtime){
                 const cnt = d.count;
                 bar.innerHTML = '<i class="fas fa-exclamation-triangle"></i>'
-                    +' ⚠ OVERTIME ALERT — '+cnt+' PC'+(cnt>1?' are':' is')+' past the time limit! Click here to attend.'
+                    +' ⚠ OVERTIME ALERT — '+cnt+' PC'+(cnt>1?'s are':' is')+' past the time limit! Click here to attend.'
                     +' <i class="fas fa-exclamation-triangle"></i>';
                 bar.classList.add('show');
                 document.body.classList.add('alarm-visible');
-                if(!_alarmPlaying){
-                    _alarmPlaying = true;
-                    playBeep();
+                if(!_alarmOn){
+                    _alarmOn = true;
+                    doBeep(); // starts beep loop
                 }
             } else {
                 bar.classList.remove('show');
                 document.body.classList.remove('alarm-visible');
-                _alarmPlaying = false;
+                _alarmOn = false;
             }
         })
-        .catch(()=>{});
+        .catch(e=>{ console.warn('Overtime check failed:', e); });
 }
 
 checkOvertime();
