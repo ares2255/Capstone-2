@@ -1,10 +1,12 @@
 <?php
-// Lightweight endpoint — returns whether any PC is currently in overtime
 include "config/db.php";
 header('Content-Type: application/json');
+header('Cache-Control: no-cache');
 
 try {
-    // Find any active session where elapsed time > time_limit (in minutes)
+    // Set session timezone to PH so NOW() is correct
+    $pdo->exec("SET time_zone = '+08:00'");
+
     $stmt = $pdo->query("
         SELECT COUNT(*) as cnt
         FROM sessions
@@ -13,8 +15,9 @@ try {
           AND TIMESTAMPDIFF(SECOND, start_time, NOW()) > (time_limit * 60)
     ");
     $row = $stmt->fetch();
-    echo json_encode(['overtime' => (int)$row['cnt'] > 0, 'count' => (int)$row['cnt']]);
+    $count = (int)$row['cnt'];
+    echo json_encode(['overtime' => $count > 0, 'count' => $count]);
 } catch (Exception $e) {
-    echo json_encode(['overtime' => false, 'count' => 0]);
+    echo json_encode(['overtime' => false, 'count' => 0, 'error' => $e->getMessage()]);
 }
 ?>
