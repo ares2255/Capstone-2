@@ -1,11 +1,43 @@
 <?php
 $current = basename($_SERVER['PHP_SELF']);
+
+// Check for any overtime PCs
+if (!isset($pdo)) include __DIR__ . '/../config/db.php';
+$overtimeCount = 0;
+$overtimePCs = [];
+try {
+    $stmt = $pdo->query("
+        SELECT p.name, s.start_time, s.time_limit
+        FROM sessions s
+        JOIN pcs p ON p.id = s.pc_id
+        WHERE s.end_time IS NULL AND s.time_limit IS NOT NULL
+    ");
+    foreach ($stmt->fetchAll() as $row) {
+        $elapsed = (time() - strtotime($row['start_time'])) / 60;
+        if ($elapsed > $row['time_limit']) {
+            $overtimeCount++;
+            $overtimePCs[] = $row['name'];
+        }
+    }
+} catch (Exception $e) {}
 ?>
+
+<?php if ($overtimeCount > 0): ?>
+<div class="global-overtime-bar">
+    <span>⚠</span>
+    OVERTIME ALERT —
+    <?= implode(', ', array_map('htmlspecialchars', $overtimePCs)) ?>
+    <?= $overtimeCount === 1 ? 'has' : 'have' ?> exceeded their time limit!
+    <a href="counter.php" class="overtime-link">Go to Counter →</a>
+    <span>⚠</span>
+</div>
+<?php endif; ?>
+
 <nav class="navbar">
-    <div class="nav-brand">
-        <i class="fas fa-clock"></i>
+    <a href="counter.php" class="nav-brand">
+        <i class="fas fa-desktop"></i>
         <span>The<strong>Desktop</strong></span>
-    </div>
+    </a>
     <div class="nav-links">
         <a href="counter.php" class="<?= $current=='counter.php'?'active':'' ?>">
             <i class="fas fa-list"></i> Counter
@@ -24,11 +56,17 @@ $current = basename($_SERVER['PHP_SELF']);
         </a>
     </div>
     <div class="nav-right">
+        <?php if ($overtimeCount > 0): ?>
+        <span class="nav-overtime-badge">
+            <i class="fas fa-exclamation-triangle"></i> <?= $overtimeCount ?> OVERTIME
+        </span>
+        <?php endif; ?>
         <span class="nav-time" id="navTime"></span>
         <span class="nav-user"><i class="fas fa-user"></i> <?= htmlspecialchars($display_user ?? '') ?></span>
         <a href="logout.php" class="logout-btn">Logout</a>
     </div>
 </nav>
+
 <script>
 function updateTime() {
     const now = new Date();
@@ -40,4 +78,5 @@ function updateTime() {
 }
 updateTime();
 setInterval(updateTime, 1000);
+setTimeout(() => location.reload(), 30000);
 </script>
