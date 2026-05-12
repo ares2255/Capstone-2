@@ -103,6 +103,21 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
             </div>
             <button type="submit" class="login-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
         </form>
+        <script>
+        function togglePass(id, btn) {
+            const inp = document.getElementById(id);
+            const icon = btn.querySelector('i');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+                btn.style.color = '#38bdf8';
+            } else {
+                inp.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+                btn.style.color = '';
+            }
+        }
+        </script>
 
         <div style="text-align:center;margin-top:15px;">
             <span style="color:#64748b;font-size:.85rem;">Need an account?</span>
