@@ -90,16 +90,16 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
 .login-card a[href="register.php"]{color:#1e2a78;font-weight:700;}
 
 /* ── Modal ── */
-.modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;}
+.modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;}
 .modal-bg.show{display:flex;}
-.modal-card{background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;padding:32px;width:400px;max-width:94vw;border-bottom:6px solid #1e2a78;}
+.modal-card{background:#ffffff;border:none;border-radius:18px;padding:32px;width:420px;max-width:94vw;border-bottom:6px solid #1e2a78;box-shadow:0 10px 40px rgba(0,0,0,.3);position:relative;z-index:1;}
 .modal-card h3{margin:0 0 6px;color:#1e2a78;font-size:17px;display:flex;align-items:center;gap:8px;}
 .modal-card p{color:#64748b;font-size:.84rem;margin:0 0 18px;}
 .modal-input{width:100%;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b;border-radius:8px;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:12px;}
 .modal-input:focus{border-color:#1e2a78;}
 .modal-btn{width:100%;padding:12px;background:#1e2a78;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.9rem;}
 .modal-btn:hover{background:#2d3eaa;}
-.modal-cancel{display:block;text-align:center;margin-top:12px;color:#64748b;font-size:.83rem;cursor:pointer;text-decoration:underline;}
+.modal-cancel{display:block;text-align:center;margin-top:12px;color:#64748b;font-size:.83rem;cursor:pointer;text-decoration:underline;background:none;border:none;width:100%;padding:4px;position:relative;z-index:2;}
 .modal-cancel:hover{color:#1e2a78;}
 .sending-state{text-align:center;padding:20px;color:#64748b;}
 .sending-state i{font-size:32px;color:#1e2a78;display:block;margin-bottom:12px;animation:spin 1s linear infinite;}
@@ -200,7 +200,7 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
             <p>Enter your username or email and we'll send a 6-digit code to your inbox.</p>
             <input type="text" id="forgotUser" class="modal-input" placeholder="Your email or username">
             <button class="modal-btn" onclick="submitForgot()"><i class="fas fa-paper-plane"></i> Send Code</button>
-            <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
+            <button class="modal-cancel" onclick="closeForgot()">Cancel</button>
         </div>
 
         <!-- Sending spinner -->
@@ -223,7 +223,7 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
                 <input class="code-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
             </div>
             <button class="modal-btn" onclick="verifyCode()"><i class="fas fa-check"></i> Verify Code</button>
-            <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
+            <button class="modal-cancel" onclick="closeForgot()">Cancel</button>
         </div>
 
         <!-- STEP 3: Set new password -->
@@ -234,7 +234,7 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
             <input type="password" id="newPass" class="modal-input" placeholder="New password (min. 6 characters)">
             <input type="password" id="confirmPass" class="modal-input" placeholder="Confirm new password">
             <button class="modal-btn" onclick="setPassword()"><i class="fas fa-save"></i> Save New Password</button>
-            <span class="modal-cancel" onclick="closeForgot()">Cancel</span>
+            <button class="modal-cancel" onclick="closeForgot()">Cancel</button>
         </div>
 
         <!-- Success -->
