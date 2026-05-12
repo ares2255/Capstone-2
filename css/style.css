@@ -367,7 +367,7 @@ body::before {
     background-size: 60px 60px;
     opacity: 0.3;
     z-index: -1;
-    pointer-events: none; /* Add this so it doesn't block mouse clicks */
+    pointer-events: none;
 }
 
 /* LOGIN HEADER */
@@ -378,15 +378,13 @@ margin-bottom:30px;
 }
 
 .logo-box{
-width:80px;
-height:80px;
-margin:auto;
-background:#0c9db5;
-border-radius:18px;
 display:flex;
 align-items:center;
 justify-content:center;
-font-size:40px;
+gap:0;
+margin:0 auto 15px;
+width:fit-content;
+height:auto;
 }
 
 /* LOGIN CARD */
