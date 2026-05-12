@@ -24,7 +24,7 @@ $active_count = $pdo->query("SELECT COUNT(*) FROM pcs WHERE status='active'")->f
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>The Desktop | Counter</title>
+<title>Q-Solutions | Counter</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="includes/navbar.css">
 <style>
@@ -145,12 +145,12 @@ align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;}
 /* Open time button */
 .btn-open-time{
     display:block;width:100%;padding:14px;
-    background:#e74c3c;color:white;border:none;
+    background:#1e2a78;color:white;border:none;
     border-radius:10px;font-size:15px;font-weight:700;
     cursor:pointer;margin-bottom:12px;transition:.2s;
     letter-spacing:.5px;
 }
-.btn-open-time:hover{background:#c0392b;}
+.btn-open-time:hover{background:#2d3eaa;}
 
 /* Package grid */
 .pkg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
@@ -172,12 +172,12 @@ align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;}
 
 /* End Modal */
 .end-modal-box{background:#0d1b2e;border:1px solid rgba(255,77,77,.3);border-radius:16px;padding:32px;width:380px;max-width:95vw;text-align:center;box-shadow:0 0 40px rgba(255,0,0,.15);}
-.end-modal-box .end-icon{font-size:48px;color:#ff4d4d;display:block;margin-bottom:16px;}
+.end-modal-box .end-icon{font-size:48px;color:#4a6cf7;display:block;margin-bottom:16px;}
 .end-modal-box h3{margin:0 0 8px;font-size:18px;}
 .end-modal-box p{color:#4a5f7a;font-size:13px;margin-bottom:24px;}
 .modal-actions{display:flex;gap:10px;}
 .btn-stay{flex:1;background:rgba(255,255,255,.05);color:#8aa0c5;border:1px solid rgba(255,255,255,.1);padding:12px;border-radius:10px;cursor:pointer;font-size:14px;}
-.btn-end-confirm{flex:1;background:#ff4d4d;color:white;border:none;padding:12px;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px;}
+.btn-end-confirm{flex:1;background:#1e2a78;color:white;border:none;padding:12px;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px;}
 
 /* Toast */
 .toast{position:fixed;bottom:28px;right:24px;padding:14px 20px;border-radius:10px;font-size:14px;z-index:5000;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);}
