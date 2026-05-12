@@ -1,34 +1,35 @@
 <?php
-include "config/db.php";
+error_reporting(0);
+ini_set('display_errors', 0);
+include 'config/db.php';
 header('Content-Type: application/json');
 header('Cache-Control: no-cache');
+date_default_timezone_set('Asia/Manila');
 
+$names = [];
 try {
-    // Only check PCs that are currently active (status='active' in pcs table)
-    // then find their latest session and check if it's overtime
     $stmt = $pdo->query("
-        SELECT s.id, s.start_time, s.time_limit,
-               EXTRACT(EPOCH FROM (NOW() - s.start_time)) AS elapsed_seconds
+        SELECT DISTINCT ON (p.id) p.name, s.start_time, s.time_limit
         FROM sessions s
-        INNER JOIN pcs p ON p.id = s.pc_id
-        WHERE p.status = 'active'
-          AND s.end_time IS NULL
+        JOIN pcs p ON p.id = s.pc_id
+        WHERE s.end_time IS NULL
+          AND p.status = 'active'
           AND s.time_limit IS NOT NULL
+          AND s.time_limit > 0
+        ORDER BY p.id, s.id DESC
     ");
     $rows = $stmt->fetchAll();
-
-    $overtime_count = 0;
+    $now = time();
     foreach ($rows as $row) {
-        if ((float)$row['elapsed_seconds'] > (int)$row['time_limit'] * 60) {
-            $overtime_count++;
+        $start = strtotime($row['start_time']);
+        if (!$start) continue;
+        $elapsed_mins = ($now - $start) / 60;
+        if ($elapsed_mins > (float)$row['time_limit']) {
+            $names[] = $row['name'];
         }
     }
-
-    echo json_encode([
-        'overtime' => $overtime_count > 0,
-        'count'    => $overtime_count
-    ]);
 } catch (Exception $e) {
-    echo json_encode(['overtime' => false, 'count' => 0, 'error' => $e->getMessage()]);
+    echo json_encode(['count'=>0,'names'=>[],'error'=>$e->getMessage()]);
+    exit();
 }
-?>
+echo json_encode(['count'=>count($names),'names'=>$names]);
