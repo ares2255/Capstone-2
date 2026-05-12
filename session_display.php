@@ -30,24 +30,24 @@ try {
 <meta http-equiv="refresh" content="30">
 <title>TheDesktop — <?= htmlspecialchars($pc_name) ?></title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#050b14;color:white;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
-background-image:linear-gradient(rgba(19,39,66,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(19,39,66,.3) 1px,transparent 1px);background-size:50px 50px;}
+body{background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);color:white;font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 
-.top-bar{position:fixed;top:0;left:0;right:0;background:rgba(10,25,47,.95);border-bottom:1px solid #132742;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:100;}
-.brand{font-size:18px;font-weight:700;}.brand strong{color:#e74c3c;}
-.clock-bar{font-family:monospace;font-size:14px;color:#38bdf8;background:#0a192f;padding:6px 14px;border-radius:8px;}
+.top-bar{position:fixed;top:0;left:0;right:0;background:rgba(13,17,23,.95);border-bottom:1px solid rgba(255,255,255,.08);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:100;backdrop-filter:blur(10px);}
+.brand{font-size:18px;font-weight:700;}.brand strong{color:#7b9cff;}
+.clock-bar{font-family:monospace;font-size:14px;color:#7b9cff;background:rgba(74,108,247,.1);border:1px solid rgba(74,108,247,.2);padding:6px 14px;border-radius:8px;}
 
 /* ACTIVE SESSION */
-.session-card{background:rgba(10,25,47,.9);border:2px solid #38bdf8;border-radius:20px;padding:48px 56px;text-align:center;max-width:520px;width:90%;box-shadow:0 0 60px rgba(56,189,248,.15);}
+.session-card{background:rgba(255,255,255,.05);border:2px solid #4a6cf7;border-radius:24px;padding:48px 56px;text-align:center;max-width:520px;width:90%;box-shadow:0 0 60px rgba(74,108,247,.2);backdrop-filter:blur(10px);}
 .pc-label{font-size:14px;color:#8aa0c5;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
-.pc-title{font-size:28px;font-weight:700;margin-bottom:32px;color:#38bdf8;}
+.pc-title{font-size:28px;font-weight:700;margin-bottom:32px;color:#7b9cff;}
 
 .timer-ring{position:relative;width:220px;height:220px;margin:0 auto 32px;}
 .timer-ring svg{transform:rotate(-90deg);}
-.ring-bg{fill:none;stroke:#132742;stroke-width:12;}
-.ring-progress{fill:none;stroke:#38bdf8;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .5s;}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:12;}
+.ring-progress{fill:none;stroke:#4a6cf7;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .5s;}
 .ring-expired{stroke:#ff4d4d;}
 .ring-warning{stroke:#f1c40f;}
 .timer-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
@@ -55,7 +55,7 @@ background-image:linear-gradient(rgba(19,39,66,.3) 1px,transparent 1px),linear-g
 .time-label{font-size:12px;color:#8aa0c5;text-transform:uppercase;letter-spacing:1px;margin-top:6px;}
 
 .time-elapsed{font-size:13px;color:#8aa0c5;margin-bottom:8px;}
-.package-badge{display:inline-block;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:#38bdf8;padding:6px 16px;border-radius:20px;font-size:13px;margin-bottom:28px;}
+.package-badge{display:inline-block;background:rgba(74,108,247,.12);border:1px solid rgba(74,108,247,.3);color:#7b9cff;padding:6px 16px;border-radius:20px;font-size:13px;margin-bottom:28px;}
 
 .end-btn{display:inline-flex;align-items:center;gap:8px;background:#ff4d4d;color:white;border:none;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;text-decoration:none;}
 .end-btn:hover{background:#e03030;transform:translateY(-2px);}
@@ -70,7 +70,7 @@ background-image:linear-gradient(rgba(19,39,66,.3) 1px,transparent 1px),linear-g
 .call-staff small{color:#8aa0c5;font-size:13px;}
 
 /* AVAILABLE */
-.idle-card{background:rgba(10,25,47,.9);border:2px solid #132742;border-radius:20px;padding:48px 56px;text-align:center;max-width:520px;width:90%;}
+.idle-card{background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:24px;padding:48px 56px;text-align:center;max-width:520px;width:90%;}
 .idle-icon{font-size:64px;color:#4a5f7a;margin-bottom:16px;}
 .idle-title{font-size:24px;font-weight:700;color:#8aa0c5;margin-bottom:8px;}
 .idle-sub{color:#4a5f7a;font-size:14px;}
@@ -78,13 +78,15 @@ background-image:linear-gradient(rgba(19,39,66,.3) 1px,transparent 1px),linear-g
 /* Confirm Modal */
 .modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:999;align-items:center;justify-content:center;}
 .modal-bg.show{display:flex;}
-.modal-box{background:#0f172a;border:1px solid #ff4d4d;border-radius:16px;padding:36px;max-width:400px;width:90%;text-align:center;}
+.modal-box{background:#ffffff;border-radius:24px;padding:36px;max-width:400px;width:90%;text-align:center;border-bottom:8px solid #ff4d4d;box-shadow:0 20px 60px rgba(0,0,0,.5);color:#1e293b;}
 .modal-box i{font-size:48px;color:#ff4d4d;margin-bottom:16px;display:block;}
-.modal-box h3{font-size:20px;margin-bottom:8px;}
-.modal-box p{color:#8aa0c5;font-size:14px;margin-bottom:24px;}
+.modal-box h3{font-size:20px;margin-bottom:8px;color:#1e293b;}
+.modal-box p{color:#64748b;font-size:14px;margin-bottom:24px;}
 .modal-actions{display:flex;gap:12px;}
-.btn-cancel{flex:1;background:#1e293b;color:#94a3b8;border:none;padding:12px;border-radius:8px;cursor:pointer;font-size:14px;}
-.btn-confirm{flex:1;background:#ff4d4d;color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px;}
+.btn-cancel{flex:1;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;padding:12px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s;}
+.btn-cancel:hover{background:#e2e8f0;}
+.btn-confirm{flex:1;background:#ff4d4d;color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px;transition:.2s;}
+.btn-confirm:hover{background:#e03030;}
 </style>
 </head>
 <body>
