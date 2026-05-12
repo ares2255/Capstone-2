@@ -7,7 +7,7 @@ $current = basename($_SERVER['PHP_SELF']);
         <span class="ot-icon">⚠</span>
         <span id="overtimeBarText">OVERTIME ALERT!</span>
         <a href="counter.php" class="ot-link">→ Go to Counter</a>
-        <button class="ot-sound-btn" onclick="forceSoundOn(this)">🔊 Enable Sound</button>
+        <button class="ot-sound-btn" id="otSoundBtn" onclick="toggleSound()">🔊 Sound On</button>
         <span class="ot-icon">⚠</span>
     </div>
 </div>
@@ -57,7 +57,7 @@ function updateTime(){
 updateTime(); setInterval(updateTime,1000);
 
 // ── Sound ──
-let _ctx=null, _alarming=false;
+let _ctx=null, _alarming=false, _muted=false;
 
 function _getCtx(){
     if(!_ctx) _ctx=new(window.AudioContext||window.webkitAudioContext)();
@@ -65,7 +65,7 @@ function _getCtx(){
 }
 
 function _beep(){
-    if(!_alarming) return;
+    if(!_alarming || _muted) return;
     try{
         const ctx=_getCtx();
         if(ctx.state==='suspended') ctx.resume();
@@ -79,18 +79,23 @@ function _beep(){
     }catch(e){}
 }
 
-function forceSoundOn(btn){
-    _alarming=true;
-    _beep();
-    if(btn){ btn.textContent='🔊 Sounding'; btn.disabled=true; }
+function toggleSound(){
+    _muted = !_muted;
+    const btn = document.getElementById('otSoundBtn');
+    if(_muted){
+        btn.textContent = '🔇 Sound Off';
+        btn.style.background = 'rgba(0,0,0,0.3)';
+    } else {
+        btn.textContent = '🔊 Sound On';
+        btn.style.background = '';
+        _beep(); // restart beeping
+    }
 }
 
 // Auto-start sound on first interaction
-function _trySound(){
-    if(_alarming && _ctx && _ctx.state==='suspended') _ctx.resume();
-}
-document.addEventListener('click', _trySound);
-document.addEventListener('keydown', _trySound);
+document.addEventListener('click', function _trySound(){
+    if(_alarming && !_muted && _ctx && _ctx.state==='suspended') _ctx.resume();
+}, {once:false});
 
 // ── Overtime Checker ──
 function checkOvertime(){
@@ -106,7 +111,10 @@ function checkOvertime(){
             badge.style.display='flex';
             cnt.textContent=d.count;
             text.textContent='OVERTIME — '+d.names.join(', ')+' exceeded time limit!';
-            if(!_alarming){ _alarming=true; _beep(); }
+            if(!_alarming){
+                _alarming=true;
+                if(!_muted) _beep();
+            }
         } else {
             bar.classList.remove('show');
             badge.style.display='none';
