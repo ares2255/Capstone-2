@@ -2,10 +2,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #0f172a;
+    background: #0a0f1a;
     padding: 0 24px;
     height: 60px;
-    border-bottom: 2px solid #e74c3c;
+    border-bottom: 2px solid #1e2a78;
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -15,15 +15,39 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    color: #e74c3c;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: bold;
     text-decoration: none;
 }
 
-.nav-brand i { font-size: 1.4rem; }
-.nav-brand span { color: white; }
-.nav-brand strong { color: #e74c3c; }
+/* Q-Solutions logo block in navbar */
+.nav-logo-q {
+    background: #1e2a78;
+    border: 2px solid white;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 900;
+    color: white;
+}
+
+.nav-logo-solutions {
+    background: #dde2f0;
+    height: 32px;
+    padding: 0 9px;
+    border-radius: 0 6px 6px 0;
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1e2a78;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
 
 .nav-links {
     display: flex;
@@ -43,7 +67,7 @@
 }
 
 .nav-links a:hover { background: #1e293b; color: white; }
-.nav-links a.active { background: #e74c3c; color: white; }
+.nav-links a.active { background: #1e2a78; color: white; }
 
 .nav-right {
     display: flex;
@@ -52,7 +76,7 @@
 }
 
 .nav-time {
-    color: #1fb6ff;
+    color: #7b9cff;
     font-weight: bold;
     font-size: 0.95rem;
     background: #1e293b;
@@ -69,7 +93,7 @@
 }
 
 .logout-btn {
-    background: #e74c3c;
+    background: #1e2a78;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -81,7 +105,7 @@
     transition: 0.2s;
 }
 
-.logout-btn:hover { background: #c0392b; }
+.logout-btn:hover { background: #2d3eaa; }
 
 /* ── Overtime Bar ── */
 .overtime-bar {
