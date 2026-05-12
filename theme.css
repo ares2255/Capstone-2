@@ -1,214 +1,152 @@
 /* ============================================================
-   GLOBAL LIGHT MODE OVERRIDES
-   Applied when <body> has .light-mode class
+   GLOBAL LIGHT MODE — targets html.light-mode so it applies
+   the instant the <html> class is set in <head>, before render
    ============================================================ */
 
-/* ── Transitions for smooth switch ── */
-body, .navbar, .card, .stat-card, .stat-box, .chart-card,
-.panel-card, .table-container, .pc-card, .date-bar,
-.date-filter, .compare-item, .price-preview, .toggle-row,
-.main-container, .page-wrap {
-    transition: background .25s, border-color .25s, color .25s, box-shadow .25s;
-}
-
-/* ── Body ── */
-body.light-mode {
-    background: linear-gradient(135deg, #e8edf5 0%, #f0f4fb 50%, #e4ecf7 100%) !important;
+html.light-mode body {
+    background: linear-gradient(135deg,#e8edf5 0%,#f0f4fb 50%,#e4ecf7 100%) !important;
     color: #1e293b !important;
 }
 
-/* ── Navbar (also in navbar.css — kept here as fallback) ── */
-body.light-mode .navbar {
-    background: #ffffff;
-    border-bottom: 2px solid #d1dce8;
-    box-shadow: 0 2px 12px rgba(30,42,120,.08);
+/* ── Navbar ── */
+html.light-mode .navbar {
+    background: #ffffff !important;
+    border-bottom: 2px solid #d1dce8 !important;
+    box-shadow: 0 2px 12px rgba(30,42,120,.08) !important;
 }
-body.light-mode .nav-links a { color: #4a5f7a; }
-body.light-mode .nav-links a:hover { background: #eef2fb; color: #1e2a78; }
-body.light-mode .nav-links a.active { background: #1e2a78; color: white; }
-body.light-mode .nav-time { background: #eef2fb; color: #1e2a78; }
-body.light-mode .nav-user { color: #4a5f7a; }
+html.light-mode .nav-links a { color: #4a5f7a !important; }
+html.light-mode .nav-links a:hover { background: #eef2fb !important; color: #1e2a78 !important; }
+html.light-mode .nav-links a.active { background: #1e2a78 !important; color: white !important; }
+html.light-mode .nav-time { background: #eef2fb !important; color: #1e2a78 !important; }
+html.light-mode .nav-user { color: #4a5f7a !important; }
 
 /* ── Page headers ── */
-body.light-mode .page-header h2 { color: #1e293b !important; }
-body.light-mode .page-header p  { color: #4a5f7a !important; }
+html.light-mode .page-header h2,
+html.light-mode h2 { color: #1e293b !important; }
+html.light-mode .page-header p { color: #4a5f7a !important; }
 
-/* ── Generic cards ── */
-body.light-mode .card,
-body.light-mode .stat-card,
-body.light-mode .chart-card,
-body.light-mode .panel-card,
-body.light-mode .table-container {
+/* ── All cards ── */
+html.light-mode .card,
+html.light-mode .stat-card,
+html.light-mode .chart-card,
+html.light-mode .panel-card,
+html.light-mode .table-container,
+html.light-mode .compare-item {
     background: #ffffff !important;
     border-color: #d1dce8 !important;
-    box-shadow: 0 4px 20px rgba(30,42,120,.07);
+    box-shadow: 0 4px 20px rgba(30,42,120,.07) !important;
 }
 
-/* ── Stat boxes (counter + printing) ── */
-body.light-mode .stat-box {
+/* ── Stat boxes ── */
+html.light-mode .stat-box {
     background: #ffffff !important;
     border-color: #d1dce8 !important;
-    box-shadow: 0 4px 16px rgba(30,42,120,.07);
+    box-shadow: 0 4px 16px rgba(30,42,120,.07) !important;
 }
-body.light-mode .stat-info p,
-body.light-mode .stat-card small,
-body.light-mode .stat-lbl { color: #64748b !important; }
+html.light-mode .stat-info p,
+html.light-mode .stat-card small,
+html.light-mode .stat-lbl { color: #64748b !important; }
+html.light-mode .stat-info h3 { color: #1e293b !important; }
 
 /* ── Card headings ── */
-body.light-mode .card h3,
-body.light-mode .chart-card h3,
-body.light-mode .table-header h3 { color: #1e2a78 !important; }
-body.light-mode .card h3 { border-bottom-color: #dde5f0 !important; }
+html.light-mode .card h3,
+html.light-mode .chart-card h3,
+html.light-mode .table-header h3 { color: #1e2a78 !important; }
+html.light-mode .card h3 { border-bottom-color: #dde5f0 !important; }
 
-/* ── Inputs & date fields ── */
-body.light-mode input[type="number"],
-body.light-mode input[type="text"],
-body.light-mode input[type="password"],
-body.light-mode input[type="date"],
-body.light-mode input[type="email"],
-body.light-mode textarea {
+/* ── Inputs ── */
+html.light-mode input[type="number"],
+html.light-mode input[type="text"],
+html.light-mode input[type="password"],
+html.light-mode input[type="date"],
+html.light-mode input[type="email"],
+html.light-mode textarea {
     background: #f4f7fb !important;
     border-color: #c8d5e8 !important;
     color: #1e293b !important;
 }
-body.light-mode input[type="date"]::-webkit-calendar-picker-indicator { filter: none !important; }
-body.light-mode input:focus,
-body.light-mode textarea:focus {
-    border-color: #1e2a78 !important;
-    box-shadow: 0 0 0 3px rgba(30,42,120,.12) !important;
-}
+html.light-mode input[type="date"]::-webkit-calendar-picker-indicator { filter: none !important; }
+html.light-mode input:focus { border-color: #1e2a78 !important; box-shadow: 0 0 0 3px rgba(30,42,120,.12) !important; }
 
-/* ── Select dropdowns ── */
-body.light-mode select {
+/* ── Selects ── */
+html.light-mode select {
     background: #f4f7fb !important;
     border-color: #c8d5e8 !important;
     color: #1e293b !important;
 }
-body.light-mode select option { background: #f4f7fb !important; color: #1e293b !important; }
-body.light-mode select option:checked { background: #1e2a78 !important; color: white !important; }
+html.light-mode select option { background: #f4f7fb !important; color: #1e293b !important; }
+html.light-mode select option:checked { background: #1e2a78 !important; color: white !important; }
 
 /* ── Date bar / filter ── */
-body.light-mode .date-bar,
-body.light-mode .date-filter {
-    background: #ffffff !important;
-    border-color: #d1dce8 !important;
-}
-body.light-mode .date-bar label,
-body.light-mode .date-filter label { color: #64748b !important; }
-body.light-mode .date-banner {
-    background: rgba(30,42,120,.06) !important;
-    border-color: rgba(30,42,120,.15) !important;
-    color: #1e2a78 !important;
-}
-body.light-mode .date-banner.today {
-    background: rgba(22,163,74,.06) !important;
-    border-color: rgba(22,163,74,.2) !important;
-    color: #16a34a !important;
-}
-body.light-mode .btn-today {
-    border-color: #c8d5e8 !important;
-    color: #4a5f7a !important;
-}
-body.light-mode .btn-today:hover { border-color: #1e2a78 !important; color: #1e2a78 !important; }
+html.light-mode .date-bar,
+html.light-mode .date-filter { background: #ffffff !important; border-color: #d1dce8 !important; }
+html.light-mode .date-bar label,
+html.light-mode .date-filter label { color: #64748b !important; }
+html.light-mode .date-banner { background: rgba(30,42,120,.06) !important; border-color: rgba(30,42,120,.15) !important; color: #1e2a78 !important; }
+html.light-mode .date-banner.today { background: rgba(22,163,74,.06) !important; border-color: rgba(22,163,74,.2) !important; color: #16a34a !important; }
+html.light-mode .btn-today { border-color: #c8d5e8 !important; color: #4a5f7a !important; }
+html.light-mode .btn-today:hover { border-color: #1e2a78 !important; color: #1e2a78 !important; }
 
 /* ── Tables ── */
-body.light-mode table th { color: #4a5f7a !important; border-bottom-color: #dde5f0 !important; }
-body.light-mode table td { border-bottom-color: #edf1f7 !important; color: #1e293b !important; }
-body.light-mode .record-count { background: #eef2fb !important; color: #4a5f7a !important; }
-body.light-mode .no-records   { color: #64748b !important; }
+html.light-mode table th { color: #4a5f7a !important; border-bottom-color: #dde5f0 !important; }
+html.light-mode table td { border-bottom-color: #edf1f7 !important; color: #1e293b !important; }
+html.light-mode .record-count { background: #eef2fb !important; color: #4a5f7a !important; }
+html.light-mode .no-records { color: #64748b !important; }
 
-/* ── PC cards (counter page) ── */
-body.light-mode .pc-card {
-    background: #ffffff !important;
-    border-color: #d1dce8 !important;
-    box-shadow: 0 2px 12px rgba(30,42,120,.06);
-}
-body.light-mode .pc-card:hover {
-    background: #f4f7fb !important;
-    box-shadow: 0 8px 28px rgba(30,42,120,.12) !important;
-}
-body.light-mode .pc-card.in-use  { border-color: rgba(255,140,0,.4) !important; }
-body.light-mode .pc-card.overtime { border-color: rgba(255,32,32,.4) !important; }
-body.light-mode .pc-name { color: #1e293b !important; }
-body.light-mode .stat-info h3 { color: #1e293b !important; }
-body.light-mode .timer-avail { color: #64748b !important; }
-body.light-mode .action-hint { color: #64748b !important; }
+/* ── PC cards (counter) ── */
+html.light-mode .pc-card { background: #ffffff !important; border-color: #d1dce8 !important; }
+html.light-mode .pc-card:hover { background: #f4f7fb !important; box-shadow: 0 8px 28px rgba(30,42,120,.12) !important; }
+html.light-mode .pc-card.in-use { border-color: rgba(255,140,0,.4) !important; }
+html.light-mode .pc-card.overtime { border-color: rgba(255,32,32,.4) !important; }
+html.light-mode .pc-name { color: #1e293b !important; }
+html.light-mode .timer-avail { color: #64748b !important; }
+html.light-mode .action-hint { color: #64748b !important; }
 
 /* ── Compare boxes (analytics) ── */
-body.light-mode .compare-item {
-    background: #ffffff !important;
-    border-color: #d1dce8 !important;
-}
-body.light-mode .compare-item .label { color: #64748b !important; }
-body.light-mode .vs-divider { color: #94a3b8 !important; }
+html.light-mode .compare-item .label { color: #64748b !important; }
+html.light-mode .vs-divider { color: #94a3b8 !important; }
 
 /* ── Toggle row (printing) ── */
-body.light-mode .toggle-row {
-    background: #f0f4fb !important;
-    border-color: #d1dce8 !important;
-}
-body.light-mode .toggle-btn { color: #4a5f7a !important; }
-body.light-mode .toggle-btn.active { background: #1e2a78 !important; color: white !important; }
+html.light-mode .toggle-row { background: #f0f4fb !important; border-color: #d1dce8 !important; }
+html.light-mode .toggle-btn { color: #4a5f7a !important; }
+html.light-mode .toggle-btn.active { background: #1e2a78 !important; color: white !important; }
 
-/* ── Price preview (printing) ── */
-body.light-mode .price-preview {
-    background: #f4f7fb !important;
-    border-color: #d1dce8 !important;
-    color: #1e293b !important;
-}
+/* ── Price preview ── */
+html.light-mode .price-preview { background: #f4f7fb !important; border-color: #d1dce8 !important; color: #1e293b !important; }
 
 /* ── Alert success ── */
-body.light-mode .alert-success {
-    background: rgba(22,163,74,.08) !important;
-    color: #16a34a !important;
-    border-color: rgba(22,163,74,.25) !important;
-}
+html.light-mode .alert-success { background: rgba(22,163,74,.08) !important; color: #16a34a !important; border-color: rgba(22,163,74,.25) !important; }
 
-/* ── Package badges & misc text ── */
-body.light-mode .pkg-add-row { border-bottom-color: #dde5f0 !important; }
-body.light-mode .pkg-add-row label,
-body.light-mode .pkg-table th { color: #4a5f7a !important; }
-body.light-mode .pkg-table td { color: #1e293b !important; border-bottom-color: #edf1f7 !important; }
-body.light-mode .pkg-badge { background: rgba(30,42,120,.08) !important; border-color: rgba(30,42,120,.2) !important; color: #1e2a78 !important; }
-body.light-mode .pkg-price  { color: #16a34a !important; }
-body.light-mode .pkg-mins   { color: #64748b !important; }
-body.light-mode .pkg-empty  { color: #64748b !important; }
-body.light-mode .type-badge { background: rgba(30,42,120,.08) !important; border-color: rgba(30,42,120,.18) !important; color: #1e2a78 !important; }
-body.light-mode .price-text { color: #16a34a !important; }
+/* ── Package table ── */
+html.light-mode .pkg-add-row { border-bottom-color: #dde5f0 !important; }
+html.light-mode .pkg-add-row label,
+html.light-mode .pkg-table th { color: #4a5f7a !important; }
+html.light-mode .pkg-table td { color: #1e293b !important; border-bottom-color: #edf1f7 !important; }
+html.light-mode .pkg-badge { background: rgba(30,42,120,.08) !important; border-color: rgba(30,42,120,.2) !important; color: #1e2a78 !important; }
+html.light-mode .pkg-price { color: #16a34a !important; }
+html.light-mode .pkg-mins,
+html.light-mode .pkg-empty { color: #64748b !important; }
+html.light-mode .type-badge { background: rgba(30,42,120,.08) !important; border-color: rgba(30,42,120,.18) !important; color: #1e2a78 !important; }
+html.light-mode .price-text { color: #16a34a !important; }
 
-/* ── Inline muted text overrides ── */
-body.light-mode [style*="color:#8aa0c5"],
-body.light-mode [style*="color: #8aa0c5"] { color: #64748b !important; }
-body.light-mode [style*="color:#4a5f7a"],
-body.light-mode [style*="color: #4a5f7a"] { color: #64748b !important; }
-body.light-mode [style*="color:#7b9cff"],
-body.light-mode [style*="color: #7b9cff"] { color: #1e2a78 !important; }
+/* ── Muted text ── */
+html.light-mode small,
+html.light-mode .text-muted { color: #64748b !important; }
 
-/* ── Theme Toggle Button (fixed bottom-right) ── */
+/* ── Theme Toggle Button ── */
 .theme-toggle {
     position: fixed;
-    bottom: 28px;
-    right: 28px;
-    width: 52px;
-    height: 52px;
+    bottom: 28px; right: 28px;
+    width: 52px; height: 52px;
     border-radius: 50%;
     background: #1e2a78;
     color: white;
     border: none;
     cursor: pointer;
     font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     box-shadow: 0 4px 18px rgba(30,42,120,.45);
     z-index: 9000;
-    transition: background .3s, transform .2s, box-shadow .3s;
+    transition: background .3s, transform .2s;
 }
-.theme-toggle:hover {
-    background: #2d3eaa;
-    transform: scale(1.1);
-    box-shadow: 0 6px 24px rgba(30,42,120,.55);
-}
-body.light-mode .theme-toggle {
-    box-shadow: 0 4px 18px rgba(30,42,120,.25);
-}
+.theme-toggle:hover { background: #2d3eaa; transform: scale(1.1); }
