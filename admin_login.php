@@ -13,12 +13,44 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 <style>
 .login-header h1 span{color:#e74c3c;}
 .logo-box{background:#c0392b!important;width:60px;height:60px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 15px;color:white;font-size:28px;box-shadow:0 4px 15px rgba(192,57,43,.4);}
-.login-btn{background:#e74c3c;border:none;color:white;padding:12px;width:100%;border-radius:8px;cursor:pointer;font-weight:bold;transition:.3s;font-size:14px;}
+
+/* Login card layout */
+.login-card{background:#1a2a3f;border:1px solid #243b5e;border-radius:16px;padding:32px;width:420px;max-width:94vw;margin:30px auto;}
+.login-header{text-align:center;margin-bottom:24px;}
+
+/* Input group */
+.input-group{margin-bottom:0;}
+.input-group label{display:block;font-size:12px;color:#8aa0c5;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.input-group input,
+.pass-wrap input{
+    width:100%;padding:11px 14px;
+    background:#0d1b2e;
+    border:1px solid #2d4a6e;
+    color:white;border-radius:8px;
+    font-size:0.9rem;outline:none;
+    box-sizing:border-box;transition:.2s;
+}
+.input-group input:focus,
+.pass-wrap input:focus{border-color:#e74c3c;box-shadow:0 0 0 3px rgba(231,76,60,.15);}
+
+/* Fix browser autofill white background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus{
+    -webkit-box-shadow:0 0 0 1000px #0d1b2e inset!important;
+    -webkit-text-fill-color:white!important;
+    border:1px solid #2d4a6e!important;
+    transition:background-color 5000s ease-in-out 0s;
+}
+
+.login-btn{background:#e74c3c;border:none;color:white;padding:12px;width:100%;border-radius:8px;cursor:pointer;font-weight:bold;transition:.3s;font-size:14px;margin-top:4px;}
 .login-btn:hover{background:#c0392b;}
+
+/* Password wrapper */
 .pass-wrap{position:relative;display:flex;align-items:center;}
-.pass-wrap input{width:100%;padding-right:42px;}
-.eye-btn{position:absolute;right:10px;background:none;border:none;color:#64748b;cursor:pointer;font-size:15px;padding:0;display:flex;align-items:center;transition:.2s;}
-.eye-btn:hover{color:#38bdf8;}
+.pass-wrap input{padding-right:44px;}
+.eye-btn{position:absolute;right:12px;background:none;border:none;color:#64748b;cursor:pointer;font-size:15px;padding:0;display:flex;align-items:center;transition:.2s;}
+.eye-btn:hover{color:#e74c3c;}
 .error-msg{background:#f8d7da;color:#721c24;padding:10px;border-radius:5px;margin-bottom:15px;text-align:center;font-size:.9rem;border:1px solid #f5c6cb;}
 .success-msg{background:#d4edda;color:#155724;padding:10px;border-radius:5px;margin-bottom:15px;text-align:center;font-size:.9rem;border:1px solid #c3e6cb;}
 .divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#64748b;font-size:.82rem;}
