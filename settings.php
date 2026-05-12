@@ -103,19 +103,6 @@ body.light-mode .alert-success{background:rgba(22,163,74,.08);color:#16a34a;bord
 body.light-mode [style*="color:#4a5f7a"]{color:#64748b!important;}
 body.light-mode label[style*="color:#64748b"]{color:#64748b!important;}
 
-/* ── Toggle Button ── */
-.theme-toggle{
-    position:fixed;bottom:28px;right:28px;
-    width:52px;height:52px;border-radius:50%;
-    background:#1e2a78;color:white;
-    border:none;cursor:pointer;
-    font-size:20px;
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 4px 18px rgba(30,42,120,.45);
-    z-index:9000;transition:background .3s,transform .2s,box-shadow .3s;
-}
-.theme-toggle:hover{background:#2d3eaa;transform:scale(1.1);box-shadow:0 6px 24px rgba(30,42,120,.55);}
-body.light-mode .theme-toggle{background:#1e2a78;box-shadow:0 4px 18px rgba(30,42,120,.25);}
 </style>
 </head>
 <body>
@@ -257,42 +244,12 @@ body.light-mode .theme-toggle{background:#1e2a78;box-shadow:0 4px 18px rgba(30,4
     </div>
 </div>
 <!-- ── Theme Toggle Button ── -->
-<button class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Mode">
-    <i class="fas fa-sun" id="themeIcon"></i>
-</button>
+<!-- Handled globally by navbar.php -->
 
 <script>
 function showClearModal(){document.getElementById('clearUnitsModal').style.display='flex';}
 function closeClearModal(){document.getElementById('clearUnitsModal').style.display='none';}
 function submitClearAll(){document.getElementById('clearAllForm').submit();}
 window.onclick=e=>{if(e.target==document.getElementById('clearUnitsModal'))closeClearModal();}
-
-// ── Light/Dark Mode ──
-const body       = document.body;
-const toggleBtn  = document.getElementById('themeToggle');
-const themeIcon  = document.getElementById('themeIcon');
-
-function applyTheme(mode){
-    if(mode === 'light'){
-        body.classList.add('light-mode');
-        themeIcon.classList.replace('fa-sun','fa-moon');
-        toggleBtn.title = 'Switch to Dark Mode';
-    } else {
-        body.classList.remove('light-mode');
-        themeIcon.classList.replace('fa-moon','fa-sun');
-        toggleBtn.title = 'Switch to Light Mode';
-    }
-}
-
-// Load saved preference (default = dark)
-const savedTheme = localStorage.getItem('settings_theme') || 'dark';
-applyTheme(savedTheme);
-
-toggleBtn.addEventListener('click', () => {
-    const isLight = body.classList.contains('light-mode');
-    const newTheme = isLight ? 'dark' : 'light';
-    localStorage.setItem('settings_theme', newTheme);
-    applyTheme(newTheme);
-});
 </script>
 </body></html>
