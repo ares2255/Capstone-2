@@ -38,8 +38,11 @@ body{background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);colo
 .section-label{grid-column:1/-1;font-size:11px;color:#7b9cff;text-transform:uppercase;letter-spacing:1px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);margin-top:4px;}
 .btn-save{width:100%;background:#1e2a78;color:white;border:none;padding:12px;border-radius:10px;margin-top:18px;cursor:pointer;font-weight:bold;transition:.2s;}
 .btn-save:hover{background:#2d3eaa;transform:translateY(-1px);}
-select{width:100%;padding:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:white;border-radius:8px;box-sizing:border-box;font-family:'Inter',sans-serif;}
-select:focus{outline:none;border-color:#1e2a78;}
+select{width:100%;padding:10px;background:#0f1623;border:1px solid rgba(255,255,255,.15);color:white;border-radius:8px;box-sizing:border-box;font-family:'Inter',sans-serif;}
+select:focus{outline:none;border-color:#1e2a78;box-shadow:0 0 0 3px rgba(30,42,120,.2);}
+select option{background:#0f1623;color:white;}
+select option:hover,select option:checked{background:#1e2a78;color:white;}
+select option:disabled{color:#4a5f7a;}
 .btn-add{background:#1e2a78;color:white;border:none;padding:0 16px;border-radius:8px;cursor:pointer;font-weight:bold;white-space:nowrap;height:40px;transition:.2s;}
 .btn-add:hover{background:#2d3eaa;}
 .btn-del{background:#ff4d4d;color:white;border:none;padding:0 18px;border-radius:8px;cursor:pointer;font-weight:bold;white-space:nowrap;transition:.2s;}
