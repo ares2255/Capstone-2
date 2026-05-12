@@ -30,39 +30,42 @@ $logs = $pdo->query("SELECT * FROM print_jobs ORDER BY created_at DESC LIMIT 15"
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>The Desktop | Printing</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="includes/navbar.css">
 <style>
 html{overflow-y:scroll;}
-body{background-color:#050b14;background-image:linear-gradient(rgba(19,39,66,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(19,39,66,.3) 1px,transparent 1px);background-size:50px 50px;color:white;font-family:'Segoe UI',sans-serif;margin:0;min-height:100vh;}
+body{background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);color:white;font-family:'Inter',sans-serif;margin:0;min-height:100vh;}
 .main-container{max-width:1400px;margin:0 auto;padding:36px 40px;display:flex;gap:28px;}
 .left-col{flex:2;}.right-col{flex:1;}
-.panel-card{background:rgba(10,25,47,.85);border:1px solid #132742;border-radius:12px;padding:26px;}
+.panel-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:26px;}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
-.stat-box{background:rgba(10,25,47,.85);border:1px solid #132742;padding:18px;border-radius:12px;text-align:center;}
+.stat-box{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:18px;border-radius:16px;text-align:center;border-bottom:4px solid #1e2a78;}
 .stat-val{display:block;font-size:20px;font-weight:bold;color:#2ecc71;}
 .stat-lbl{font-size:10px;color:#8aa0c5;text-transform:uppercase;letter-spacing:1px;}
 table{width:100%;border-collapse:collapse;margin-top:10px;}
-th{text-align:left;color:#8aa0c5;font-size:11px;border-bottom:1px solid #132742;padding:11px 12px;text-transform:uppercase;letter-spacing:1px;}
-td{padding:14px 12px;font-size:14px;border-bottom:1px solid #132742;}
-.type-badge{background:#132742;padding:3px 9px;border-radius:4px;font-size:11px;}
+th{text-align:left;color:#8aa0c5;font-size:11px;border-bottom:1px solid rgba(255,255,255,.08);padding:11px 12px;text-transform:uppercase;letter-spacing:1px;}
+td{padding:14px 12px;font-size:14px;border-bottom:1px solid rgba(255,255,255,.06);}
+.type-badge{background:rgba(74,108,247,.15);border:1px solid rgba(74,108,247,.25);color:#7b9cff;padding:3px 9px;border-radius:6px;font-size:11px;}
 .price-text{color:#2ecc71;font-weight:bold;}
 .void-btn{color:#ff4d4d;background:none;border:none;cursor:pointer;transition:.2s;font-size:15px;}
 .void-btn:hover{transform:scale(1.15);}
 label{display:block;font-size:12px;color:#8aa0c5;margin:14px 0 6px;}
-input{width:100%;padding:11px;background:#050b14;border:1px solid #132742;color:white;border-radius:8px;box-sizing:border-box;}
-.toggle-row{display:flex;background:#050b14;border-radius:8px;padding:4px;border:1px solid #132742;}
-.toggle-btn{flex:1;border:none;background:none;color:#8aa0c5;padding:9px;cursor:pointer;border-radius:6px;font-weight:bold;transition:.25s;}
-.toggle-btn.active{background:#38bdf8;color:white;}
-.confirm-btn{width:100%;background:#2ecc71;color:white;border:none;padding:14px;border-radius:10px;font-weight:bold;cursor:pointer;margin-top:18px;transition:.2s;}
-.confirm-btn:hover{background:#27ae60;}
-.price-preview{background:#050b14;padding:14px;border-radius:10px;margin-top:16px;display:flex;justify-content:space-between;border:1px solid #132742;}
+input{width:100%;padding:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:white;border-radius:8px;box-sizing:border-box;font-family:'Inter',sans-serif;}
+.toggle-row{display:flex;background:rgba(255,255,255,.03);border-radius:10px;padding:4px;border:1px solid rgba(255,255,255,.1);}
+.toggle-btn{flex:1;border:none;background:none;color:#8aa0c5;padding:9px;cursor:pointer;border-radius:8px;font-weight:bold;transition:.25s;font-family:'Inter',sans-serif;}
+.toggle-btn.active{background:#1e2a78;color:white;}
+.confirm-btn{width:100%;background:#1e2a78;color:white;border:none;padding:14px;border-radius:10px;font-weight:bold;cursor:pointer;margin-top:18px;transition:.2s;font-family:'Inter',sans-serif;}
+.confirm-btn:hover{background:#2d3eaa;transform:translateY(-1px);}
+.price-preview{background:rgba(255,255,255,.04);padding:14px;border-radius:10px;margin-top:16px;display:flex;justify-content:space-between;border:1px solid rgba(255,255,255,.1);}
 #voidModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(5px);z-index:9999;align-items:center;justify-content:center;}
-.void-box{background:#0a192f;border:1px solid #ff4d4d;box-shadow:0 0 24px rgba(255,77,77,.2);border-radius:14px;padding:30px;width:400px;text-align:center;}
+.void-box{background:#ffffff;border-radius:24px;padding:36px;width:400px;text-align:center;border-bottom:8px solid #ff4d4d;box-shadow:0 20px 60px rgba(0,0,0,.5);color:#1e293b;}
 .void-box i{color:#ff4d4d;font-size:44px;margin-bottom:14px;display:block;}
-.void-box h3{margin:0 0 8px;}.void-box p{color:#8aa0c5;font-size:14px;margin-bottom:24px;}
+.void-box h3{margin:0 0 8px;color:#1e293b;}.void-box p{color:#64748b;font-size:14px;margin-bottom:24px;}
 .void-actions{display:flex;gap:12px;}
-.btn-cancel{flex:1;background:#1e293b;color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:bold;}
-.btn-confirm{flex:1;background:#ff4d4d;color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:bold;}
+.btn-cancel{flex:1;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;padding:12px;border-radius:8px;cursor:pointer;font-weight:600;transition:.2s;}
+.btn-cancel:hover{background:#e2e8f0;}
+.btn-confirm{flex:1;background:#ff4d4d;color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:bold;transition:.2s;}
+.btn-confirm:hover{background:#e03030;}
 </style>
 </head>
 <body>
