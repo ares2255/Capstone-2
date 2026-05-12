@@ -91,7 +91,7 @@ input:-webkit-autofill:focus{
 <body>
 <div class="login-wrapper">
     <div class="login-header">
-        <div class="logo-box"><i class="fas fa-desktop"></i></div>
+        <div class="logo-box"><img src="q.jpg" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:12px;"></div>
         <h1>The<span>Desktop</span></h1>
         <p>Admin Control Panel</p>
     </div>
