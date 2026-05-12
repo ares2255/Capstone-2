@@ -90,9 +90,9 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
 .login-card a[href="register.php"]{color:#1e2a78;font-weight:700;}
 
 /* ── Modal ── */
-.modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;}
-.modal-bg.show{display:flex;}
-.modal-card{background:#ffffff;border:none;border-radius:18px;padding:32px;width:420px;max-width:94vw;border-bottom:6px solid #1e2a78;box-shadow:0 10px 40px rgba(0,0,0,.3);position:relative;z-index:10000;}
+.modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:99999;align-items:center;justify-content:center;pointer-events:none;}
+.modal-bg.show{display:flex;pointer-events:all;}
+.modal-card{background:#ffffff;border:none;border-radius:18px;padding:32px;width:420px;max-width:94vw;border-bottom:6px solid #1e2a78;box-shadow:0 10px 40px rgba(0,0,0,.3);position:relative;z-index:100000;pointer-events:all;}
 .modal-card h3{margin:0 0 6px;color:#1e2a78;font-size:17px;display:flex;align-items:center;gap:8px;}
 .modal-card p{color:#64748b;font-size:.84rem;margin:0 0 18px;}
 .modal-input{width:100%;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b;border-radius:8px;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:12px;}
@@ -162,7 +162,7 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
                 </div>
             </div>
             <div class="forgot-row">
-                <a onclick="document.getElementById('forgotModal').classList.add('show')">Forgot password?</a>
+                <a onclick="document.getElementById('forgotModal').classList.add('show'); document.querySelector('.login-card').style.pointerEvents='none';">Forgot password?</a>
             </div>
             <button type="submit" class="login-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
         </form>
@@ -289,6 +289,7 @@ function showOnly(id) {
 
 function closeForgot() {
     document.getElementById('forgotModal').classList.remove('show');
+    document.querySelector('.login-card').style.pointerEvents = '';
     setTimeout(resetForgotForm, 300);
 }
 
