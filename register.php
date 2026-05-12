@@ -72,8 +72,7 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
 <div style="width:100%;max-width:500px;animation:fadeIn .8s ease-out;">
     <div class="login-header">
         <div class="logo-box">
-            <div class="logo-q">Q</div>
-            <div class="logo-solutions">SOLUTIONS</div>
+            <img src="logo.jpg" alt="Q Solutions" style="height:64px;width:auto;object-fit:contain;display:block;margin:0 auto 14px;">
         </div>
         <h1 style="color:white;font-size:2rem;font-weight:700;margin:10px 0 4px;">Q-<span style="color:#7b9cff;">Solutions</span></h1>
         <p style="color:#8aa0c5;margin:0;">System User Registration</p>
