@@ -58,7 +58,7 @@ input:-webkit-autofill:focus{
 .google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px;background:white;color:#333;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem;transition:.2s;margin-bottom:4px;box-sizing:border-box;}
 .google-btn:hover{background:#f1f3f4;box-shadow:0 2px 8px rgba(0,0,0,.15);}
 .google-btn img{width:20px;height:20px;}
-.forgot-row{text-align:right;margin:-8px 0 14px;}
+.forgot-row{text-align:right;margin:8px 0 16px;}
 .forgot-row a{color:#8aa0c5;font-size:.82rem;text-decoration:none;cursor:pointer;}
 .forgot-row a:hover{color:#1fb6ff;}
 /* Modal */
