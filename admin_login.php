@@ -15,6 +15,10 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 .logo-box{background:#c0392b!important;width:60px;height:60px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 15px;color:white;font-size:28px;box-shadow:0 4px 15px rgba(192,57,43,.4);}
 .login-btn{background:#e74c3c;border:none;color:white;padding:12px;width:100%;border-radius:8px;cursor:pointer;font-weight:bold;transition:.3s;font-size:14px;}
 .login-btn:hover{background:#c0392b;}
+.pass-wrap{position:relative;display:flex;align-items:center;}
+.pass-wrap input{width:100%;padding-right:42px;}
+.eye-btn{position:absolute;right:10px;background:none;border:none;color:#64748b;cursor:pointer;font-size:15px;padding:0;display:flex;align-items:center;transition:.2s;}
+.eye-btn:hover{color:#38bdf8;}
 .error-msg{background:#f8d7da;color:#721c24;padding:10px;border-radius:5px;margin-bottom:15px;text-align:center;font-size:.9rem;border:1px solid #f5c6cb;}
 .success-msg{background:#d4edda;color:#155724;padding:10px;border-radius:5px;margin-bottom:15px;text-align:center;font-size:.9rem;border:1px solid #c3e6cb;}
 .divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#64748b;font-size:.82rem;}
@@ -87,7 +91,12 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
             </div>
             <div class="input-group" style="margin-top:15px;">
                 <label>Password</label>
-                <input type="password" name="admin_pass" placeholder="••••••••" required>
+                <div class="pass-wrap">
+                    <input type="password" name="admin_pass" id="adminPass" placeholder="••••••••" required>
+                    <button type="button" class="eye-btn" onclick="togglePass('adminPass', this)" tabindex="-1">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
             </div>
             <div class="forgot-row">
                 <a onclick="document.getElementById('forgotModal').classList.add('show')">Forgot password?</a>
@@ -361,7 +370,18 @@ async function setPassword() {
     }
 }
 
-// Google Sign-In — direct OAuth redirect (most reliable)
+function togglePass(id, btn) {
+    const inp = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        inp.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+ — direct OAuth redirect (most reliable)
 const GOOGLE_CLIENT_ID    = '647107465413-18hemskapc88e4gil1a9g009qpli9074.apps.googleusercontent.com';
 const GOOGLE_REDIRECT_URI = 'https://capstone-2-production-c904.up.railway.app/google_callback.php';
 
