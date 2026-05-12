@@ -17,17 +17,18 @@ if(isset($_SESSION['admin_username'])){
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Desktop | Welcome</title>
+    <title>Q-Solutions | Welcome</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-bg: #0f172a; 
+            --primary-bg: #1a1a2e;
             --card-bg: #ffffff;
-            --admin-red: #ef4444;
+            --qs-navy: #1e2a78;
+            --qs-blue: #2d3eaa;
+            --qs-accent: #4a6cf7;
             --text-main: #1e293b;
             --text-muted: #64748b;
-            --staff-blue: #3b82f6;
         }
 
         body, html {
@@ -35,7 +36,7 @@ if(isset($_SESSION['admin_username'])){
             margin: 0;
             padding: 0;
             font-family: 'Inter', sans-serif;
-            background-color: var(--primary-bg); 
+            background: linear-gradient(135deg, #0d1117 0%, #1a1a2e 50%, #16213e 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -44,10 +45,10 @@ if(isset($_SESSION['admin_username'])){
 
         .login-wrapper {
             width: 100%;
-            max-width: 900px; 
+            max-width: 900px;
             padding: 40px;
             text-align: center;
-            background: transparent; 
+            background: transparent;
             animation: fadeIn 0.8s ease-out;
         }
 
@@ -58,27 +59,59 @@ if(isset($_SESSION['admin_username'])){
 
         .login-header { margin-bottom: 50px; }
 
-        /* Adjusted Logo Box for Icon */
         .logo-box {
-            font-size: 4rem;
-            margin-bottom: 15px;
-            color: var(--staff-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            margin: 0 auto 18px;
+            width: fit-content;
+        }
+
+        .logo-q {
+            background: var(--qs-navy);
+            border: 3px solid white;
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 900;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -1px;
+        }
+
+        .logo-solutions {
+            background: #dde2f0;
+            height: 56px;
+            padding: 0 18px;
+            border-radius: 0 10px 10px 0;
+            display: flex;
+            align-items: center;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--qs-navy);
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
 
         .login-header h1 {
-            font-size: 3.5rem; 
+            font-size: 2.2rem;
             color: white;
-            margin: 0;
+            margin: 14px 0 0;
             font-weight: 700;
-            letter-spacing: -1.5px;
+            letter-spacing: -0.5px;
         }
 
-        .login-header h1 span { color: var(--staff-blue); }
+        .login-header h1 span { color: #7b9cff; }
 
         .login-header p {
-            font-size: 1.2rem;
-            color: var(--text-muted);
-            margin-top: 15px;
+            font-size: 1.1rem;
+            color: #8aa0c5;
+            margin-top: 10px;
         }
 
         .portal-container {
@@ -89,41 +122,40 @@ if(isset($_SESSION['admin_username'])){
 
         .portal-card {
             background: var(--card-bg);
-            padding: 60px 40px; 
+            padding: 60px 40px;
             border-radius: 24px;
             text-decoration: none;
             width: 100%;
-            max-width: 350px; 
+            max-width: 350px;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             flex-direction: column;
             align-items: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border-bottom: 8px solid var(--admin-red);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            border-bottom: 8px solid var(--qs-navy);
         }
 
         .portal-card:hover {
             transform: translateY(-12px);
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            box-shadow: 0 25px 60px rgba(74,108,247,0.3);
         }
 
-        /* Icon Styling for the Card */
-        .portal-icon { 
-            font-size: 5rem; 
+        .portal-icon {
+            font-size: 5rem;
             margin-bottom: 30px;
-            color: var(--staff-blue);
+            color: var(--qs-blue);
         }
 
-        .portal-card h3 { 
-            font-size: 2rem; 
-            margin: 0 0 15px 0; 
-            color: var(--text-main); 
+        .portal-card h3 {
+            font-size: 2rem;
+            margin: 0 0 15px 0;
+            color: var(--text-main);
             font-weight: 700;
         }
 
-        .portal-card p { 
-            font-size: 1.1rem; 
-            color: var(--text-muted); 
+        .portal-card p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
             line-height: 1.6;
             margin: 0;
         }
@@ -143,10 +175,11 @@ if(isset($_SESSION['admin_username'])){
 <div class="login-wrapper">
     <div class="login-header">
         <div class="logo-box">
-            <i class="fas fa-desktop"></i>
+            <div class="logo-q">Q</div>
+            <div class="logo-solutions">SOLUTIONS</div>
         </div>
-        <h1>The<span>Desktop</span></h1>
-        <p>Management & Analytics Portal</p>
+        <h1>Q-<span>Solutions</span></h1>
+        <p>Management &amp; Analytics Portal</p>
     </div>
 
     <div class="portal-container">
@@ -160,7 +193,7 @@ if(isset($_SESSION['admin_username'])){
     </div>
 
     <p class="copyright">
-        &copy; <?php echo date("Y"); ?> THE DESKTOP SYSTEM &bull; ADMIN ACCESS ONLY
+        &copy; <?php echo date("Y"); ?> Q-SOLUTIONS &bull; ADMIN ACCESS ONLY
     </p>
 </div>
 
