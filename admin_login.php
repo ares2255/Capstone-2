@@ -35,7 +35,6 @@ min-height:100vh;overflow-x:hidden;}
     margin:0 auto 40px;
     box-shadow:0 10px 40px rgba(0,0,0,0.35);
     border-bottom:8px solid #1e2a78;
-    animation:fadeIn .8s ease-out;
 }
 @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
@@ -162,7 +161,7 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
                 </div>
             </div>
             <div class="forgot-row">
-                <a onclick="document.getElementById('forgotModal').classList.add('show'); document.querySelector('.login-card').style.pointerEvents='none';">Forgot password?</a>
+                <a onclick="document.getElementById('forgotModal').classList.add('show')">Forgot password?</a>
             </div>
             <button type="submit" class="login-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
         </form>
@@ -289,7 +288,6 @@ function showOnly(id) {
 
 function closeForgot() {
     document.getElementById('forgotModal').classList.remove('show');
-    document.querySelector('.login-card').style.pointerEvents = '';
     setTimeout(resetForgotForm, 300);
 }
 
@@ -460,7 +458,8 @@ function togglePass(id, btn) {
         icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
 }
- — direct OAuth redirect (most reliable)
+
+// direct OAuth redirect (most reliable)
 const GOOGLE_CLIENT_ID    = '647107465413-18hemskapc88e4gil1a9g009qpli9074.apps.googleusercontent.com';
 const GOOGLE_REDIRECT_URI = 'https://capstone-2-production-c904.up.railway.app/google_callback.php';
 
