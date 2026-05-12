@@ -70,7 +70,7 @@ try {
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="includes/navbar.css">
 <link rel="stylesheet" href="includes/theme.css">
-<script>(function(){if(localStorage.getItem("settings_theme")==="light"){document.documentElement.style.background="linear-gradient(135deg,#e8edf5 0%,#f0f4fb 50%,#e4ecf7 100%)";}})()</script>
+<script>(function(){if(localStorage.getItem("settings_theme")==="light")document.documentElement.classList.add("light-mode");})()</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 html{overflow-y:scroll;scrollbar-gutter:stable;}
