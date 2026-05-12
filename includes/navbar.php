@@ -1,6 +1,19 @@
 <?php
 $current = basename($_SERVER['PHP_SELF']);
 ?>
+<!-- Theme CSS (global light/dark) -->
+<link rel="stylesheet" href="includes/theme.css">
+<!-- Apply saved theme BEFORE render to avoid flash -->
+<script>
+(function(){
+    if(localStorage.getItem('settings_theme') === 'light'){
+        document.documentElement.classList.add('light-mode-pre');
+    }
+})();
+</script>
+<style>
+html.light-mode-pre body { background: linear-gradient(135deg,#e8edf5 0%,#f0f4fb 50%,#e4ecf7 100%) !important; }
+</style>
 <!-- Global Overtime Bar -->
 <div class="overtime-bar" id="overtimeBar">
     <div class="overtime-bar-inner">
@@ -140,4 +153,39 @@ function checkOvertime(){
 
 checkOvertime();
 setInterval(checkOvertime, 10000);
+
+// ── Theme: apply saved preference on every page ──
+(function(){
+    const saved = localStorage.getItem('settings_theme') || 'dark';
+    if(saved === 'light'){
+        document.body.classList.add('light-mode');
+    } else {
+        document.body.classList.remove('light-mode');
+    }
+    document.documentElement.classList.remove('light-mode-pre');
+
+    // Update toggle icon if button exists on this page
+    const icon = document.getElementById('themeIcon');
+    if(icon){
+        if(saved === 'light'){
+            icon.classList.replace('fa-sun','fa-moon');
+        } else {
+            icon.classList.replace('fa-moon','fa-sun');
+        }
+    }
+})();
 </script>
+
+<!-- ── Theme Toggle Button (all pages) ── -->
+<button class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Mode" onclick="
+    var isLight = document.body.classList.toggle('light-mode');
+    var newTheme = isLight ? 'light' : 'dark';
+    localStorage.setItem('settings_theme', newTheme);
+    var icon = document.getElementById('themeIcon');
+    if(icon){
+        if(isLight){ icon.classList.replace('fa-sun','fa-moon'); }
+        else        { icon.classList.replace('fa-moon','fa-sun'); }
+    }
+">
+    <i class="fas fa-sun" id="themeIcon"></i>
+</button>
