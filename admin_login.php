@@ -12,7 +12,9 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 <link rel="stylesheet" href="css/style.css">
 <style>
 .login-header h1 span{color:#7b9cff;}
-.logo-box{background:transparent!important;width:90px;height:90px;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 15px;box-shadow:none;overflow:hidden;}
+.logo-box{background:transparent!important;display:flex;align-items:center;justify-content:center;gap:0;margin:0 auto 15px;width:fit-content;height:auto;}
+.logo-q{background:#1e2a78;border:3px solid white;width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:white;letter-spacing:-1px;}
+.logo-solutions{background:#dde2f0;height:44px;padding:0 12px;border-radius:0 8px 8px 0;display:flex;align-items:center;font-size:1rem;font-weight:700;color:#1e2a78;letter-spacing:2px;text-transform:uppercase;}
 
 /* Login card layout */
 .login-card{background:#1a2a3f;border:1px solid #243b5e;border-radius:16px;padding:32px;width:420px;max-width:94vw;margin:30px auto;}
@@ -91,7 +93,10 @@ input:-webkit-autofill:focus{
 <body>
 <div class="login-wrapper">
     <div class="login-header">
-        <div class="logo-box"><img src="q.jpg" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:12px;"></div>
+        <div class="logo-box">
+            <div class="logo-q">Q</div>
+            <div class="logo-solutions">SOLUTIONS</div>
+        </div>
         <h1>Q-<span>Solutions</span></h1>
         <p>Admin Control Panel</p>
     </div>
