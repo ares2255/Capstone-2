@@ -776,7 +776,7 @@ margin:10px 0;
     position: relative;
 }
 
-/* The subtle red glow/line you liked */
+/* Nav accent line - Q-Solutions navy */
 .header::after {
     content: '';
     position: absolute;
@@ -784,7 +784,7 @@ margin:10px 0;
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, #ff4d4d, transparent);
+    background: linear-gradient(90deg, transparent, #1e2a78, transparent);
 }
 
 .nav-item {
@@ -798,8 +798,8 @@ margin:10px 0;
 }
 
 .nav-item.active {
-    color: #ff4d4d;
-    border-bottom: 2px solid #ff4d4d;
+    color: #7b9cff;
+    border-bottom: 2px solid #7b9cff;
 }
 
 #systemClock {
