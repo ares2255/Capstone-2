@@ -1,8 +1,6 @@
 <?php
 $current = basename($_SERVER['PHP_SELF']);
 ?>
-<!-- Theme CSS (global light/dark) -->
-<link rel="stylesheet" href="includes/theme.css">
 <!-- Apply saved theme BEFORE render to avoid flash -->
 <script>
 (function(){
