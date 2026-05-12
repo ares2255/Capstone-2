@@ -158,3 +158,28 @@
 
 /* Navbar sticks below overtime bar */
 .overtime-bar.show + .navbar { top: 44px; }
+
+/* ── LIGHT MODE — Navbar ── */
+body.light-mode .navbar {
+    background: #ffffff;
+    border-bottom: 2px solid #d1dce8;
+    box-shadow: 0 2px 12px rgba(30,42,120,.08);
+}
+body.light-mode .nav-links a {
+    color: #4a5f7a;
+}
+body.light-mode .nav-links a:hover {
+    background: #eef2fb;
+    color: #1e2a78;
+}
+body.light-mode .nav-links a.active {
+    background: #1e2a78;
+    color: white;
+}
+body.light-mode .nav-time {
+    background: #eef2fb;
+    color: #1e2a78;
+}
+body.light-mode .nav-user {
+    color: #4a5f7a;
+}
