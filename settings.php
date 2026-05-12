@@ -25,6 +25,7 @@ $packages    = $pdo->query("SELECT * FROM packages ORDER BY minutes ASC")->fetch
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="includes/navbar.css">
 <link rel="stylesheet" href="includes/theme.css">
+<script>(function(){if(localStorage.getItem('settings_theme')==='light')document.documentElement.classList.add('light-mode');})()</script>
 <style>
 html{overflow-y:scroll;}
 
@@ -80,35 +81,10 @@ select option:disabled{color:#4a5f7a;}
 .btn-pkg-del:hover{background:rgba(255,77,77,.25);}
 .pkg-empty{text-align:center;color:#8aa0c5;padding:28px 0;font-size:13px;}
 
-/* ── LIGHT MODE ── */
-body.light-mode{background:linear-gradient(135deg,#e8edf5 0%,#f0f4fb 50%,#e4ecf7 100%);color:#1e293b;}
-body.light-mode .card{background:#ffffff;border:1px solid #d1dce8;box-shadow:0 4px 20px rgba(30,42,120,.08);}
-body.light-mode .card h3{color:#1e2a78;border-bottom-color:#dde5f0;}
-body.light-mode .input-group label{color:#4a5f7a;}
-body.light-mode .input-group input{background:#f4f7fb;border:1px solid #c8d5e8;color:#1e293b;}
-body.light-mode .input-group input:focus{border-color:#1e2a78;box-shadow:0 0 0 3px rgba(30,42,120,.12);}
-body.light-mode .section-label{color:#1e2a78;border-top-color:#dde5f0;}
-body.light-mode select{background:#f4f7fb;border:1px solid #c8d5e8;color:#1e293b;}
-body.light-mode select option{background:#f4f7fb;color:#1e293b;}
-body.light-mode select option:checked{background:#1e2a78;color:white;}
-body.light-mode .pkg-add-row{border-bottom-color:#dde5f0;}
-body.light-mode .pkg-add-row label{color:#4a5f7a;}
-body.light-mode .pkg-add-row input{background:#f4f7fb;border:1px solid #c8d5e8;color:#1e293b;}
-body.light-mode .pkg-table th{color:#4a5f7a;border-bottom-color:#dde5f0;}
-body.light-mode .pkg-table td{border-bottom-color:#edf1f7;color:#1e293b;}
-body.light-mode .pkg-badge{background:rgba(30,42,120,.08);border:1px solid rgba(30,42,120,.2);color:#1e2a78;}
-body.light-mode .pkg-price{color:#16a34a;}
-body.light-mode .pkg-mins{color:#64748b;}
-body.light-mode .pkg-empty{color:#64748b;}
-body.light-mode .alert-success{background:rgba(22,163,74,.08);color:#16a34a;border-color:rgba(22,163,74,.25);}
-body.light-mode [style*="color:#4a5f7a"]{color:#64748b!important;}
-body.light-mode label[style*="color:#64748b"]{color:#64748b!important;}
 
 /* ── Toggle Button (Settings only) ── */
 .theme-toggle{position:fixed;bottom:28px;right:28px;width:52px;height:52px;border-radius:50%;background:#1e2a78;color:white;border:none;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(30,42,120,.45);z-index:9000;transition:background .3s,transform .2s,box-shadow .3s;}
-.theme-toggle:hover{background:#2d3eaa;transform:scale(1.1);box-shadow:0 6px 24px rgba(30,42,120,.55);}
-body.light-mode .theme-toggle{box-shadow:0 4px 18px rgba(30,42,120,.25);}
-
+.theme-toggle:hover{background:#2d3eaa;transform:scale(1.1);}
 </style>
 </head>
 <body>
@@ -266,11 +242,11 @@ const themeIcon = document.getElementById('themeIcon');
 
 function applyTheme(mode){
     if(mode === 'light'){
-        document.body.classList.add('light-mode');
+        document.documentElement.classList.add('light-mode');
         themeIcon.classList.replace('fa-sun','fa-moon');
         toggleBtn.title = 'Switch to Dark Mode';
     } else {
-        document.body.classList.remove('light-mode');
+        document.documentElement.classList.remove('light-mode');
         themeIcon.classList.replace('fa-moon','fa-sun');
         toggleBtn.title = 'Switch to Light Mode';
     }
@@ -280,7 +256,7 @@ const savedTheme = localStorage.getItem('settings_theme') || 'dark';
 applyTheme(savedTheme);
 
 toggleBtn.addEventListener('click', () => {
-    const isLight = document.body.classList.contains('light-mode');
+    const isLight = document.documentElement.classList.contains('light-mode');
     const newTheme = isLight ? 'dark' : 'light';
     localStorage.setItem('settings_theme', newTheme);
     applyTheme(newTheme);
