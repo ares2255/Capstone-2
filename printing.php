@@ -33,7 +33,7 @@ $logs = $pdo->query("SELECT * FROM print_jobs ORDER BY created_at DESC LIMIT 15"
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="includes/navbar.css">
 <link rel="stylesheet" href="includes/theme.css">
-<script>(function(){if(localStorage.getItem("settings_theme")==="light"){document.documentElement.style.background="linear-gradient(135deg,#e8edf5 0%,#f0f4fb 50%,#e4ecf7 100%)";}})()</script>
+<script>(function(){if(localStorage.getItem("settings_theme")==="light")document.documentElement.classList.add("light-mode");})()</script>
 <style>
 html{overflow-y:scroll;}
 body{background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);color:white;font-family:'Inter',sans-serif;margin:0;min-height:100vh;}
