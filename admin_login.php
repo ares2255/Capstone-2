@@ -7,12 +7,14 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>The Desktop | Login</title>
+<title>Q-Solutions | Login</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="css/style.css">
 <style>
-.login-header h1 span{color:#e74c3c;}
-.logo-box{background:transparent!important;width:90px;height:90px;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 15px;box-shadow:none;overflow:hidden;}
+.login-header h1 span{color:#7b9cff;}
+.logo-box{background:transparent!important;display:flex;align-items:center;justify-content:center;gap:0;margin:0 auto 15px;width:fit-content;height:auto;}
+.logo-q{background:#1e2a78;border:3px solid white;width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:white;letter-spacing:-1px;}
+.logo-solutions{background:#dde2f0;height:44px;padding:0 12px;border-radius:0 8px 8px 0;display:flex;align-items:center;font-size:1rem;font-weight:700;color:#1e2a78;letter-spacing:2px;text-transform:uppercase;}
 
 /* Login card layout */
 .login-card{background:#1a2a3f;border:1px solid #243b5e;border-radius:16px;padding:32px;width:420px;max-width:94vw;margin:30px auto;}
@@ -31,7 +33,7 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
     box-sizing:border-box;transition:.2s;
 }
 .input-group input:focus,
-.pass-wrap input:focus{border-color:#e74c3c;box-shadow:0 0 0 3px rgba(231,76,60,.15);}
+.pass-wrap input:focus{border-color:#4a6cf7;box-shadow:0 0 0 3px rgba(74,108,247,.15);}
 
 /* Fix browser autofill white background */
 input:-webkit-autofill,
@@ -43,14 +45,14 @@ input:-webkit-autofill:focus{
     transition:background-color 5000s ease-in-out 0s;
 }
 
-.login-btn{background:#e74c3c;border:none;color:white;padding:12px;width:100%;border-radius:8px;cursor:pointer;font-weight:bold;transition:.3s;font-size:14px;margin-top:4px;}
-.login-btn:hover{background:#c0392b;}
+.login-btn{background:#1e2a78;border:none;color:white;padding:12px;width:100%;border-radius:8px;cursor:pointer;font-weight:bold;transition:.3s;font-size:14px;margin-top:4px;}
+.login-btn:hover{background:#2d3eaa;}
 
 /* Password wrapper */
 .pass-wrap{position:relative;display:flex;align-items:center;}
 .pass-wrap input{padding-right:44px;}
 .eye-btn{position:absolute;right:12px;background:none;border:none;color:#64748b;cursor:pointer;font-size:15px;padding:0;display:flex;align-items:center;transition:.2s;}
-.eye-btn:hover{color:#e74c3c;}
+.eye-btn:hover{color:#4a6cf7;}
 .error-msg{background:#f8d7da;color:#721c24;padding:10px;border-radius:5px;margin-bottom:15px;text-align:center;font-size:.9rem;border:1px solid #f5c6cb;}
 .success-msg{background:#d4edda;color:#155724;padding:10px;border-radius:5px;margin-bottom:15px;text-align:center;font-size:.9rem;border:1px solid #c3e6cb;}
 .divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#64748b;font-size:.82rem;}
@@ -60,7 +62,7 @@ input:-webkit-autofill:focus{
 .google-btn img{width:20px;height:20px;}
 .forgot-row{text-align:right;margin:8px 0 16px;}
 .forgot-row a{color:#8aa0c5;font-size:.82rem;text-decoration:none;cursor:pointer;}
-.forgot-row a:hover{color:#1fb6ff;}
+.forgot-row a:hover{color:#4a6cf7;}
 /* Modal */
 .modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;}
 .modal-bg.show{display:flex;}
@@ -68,9 +70,9 @@ input:-webkit-autofill:focus{
 .modal-card h3{margin:0 0 6px;color:#38bdf8;font-size:17px;display:flex;align-items:center;gap:8px;}
 .modal-card p{color:#64748b;font-size:.84rem;margin:0 0 18px;}
 .modal-input{width:100%;padding:10px 12px;background:#020810;border:1px solid #1e293b;color:white;border-radius:8px;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:12px;}
-.modal-input:focus{border-color:#38bdf8;}
-.modal-btn{width:100%;padding:11px;background:#e74c3c;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.9rem;}
-.modal-btn:hover{background:#c0392b;}
+.modal-input:focus{border-color:#4a6cf7;}
+.modal-btn{width:100%;padding:11px;background:#1e2a78;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.9rem;}
+.modal-btn:hover{background:#2d3eaa;}
 .modal-cancel{display:block;text-align:center;margin-top:12px;color:#64748b;font-size:.83rem;cursor:pointer;text-decoration:underline;}
 .modal-cancel:hover{color:#8aa0c5;}
 .sending-state{text-align:center;padding:20px;color:#8aa0c5;}
@@ -83,7 +85,7 @@ input:-webkit-autofill:focus{
 /* Code input boxes */
 .code-inputs{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
 .code-digit{width:46px;height:54px;text-align:center;font-size:1.5rem;font-weight:700;background:#020810;border:2px solid #1e293b;color:white;border-radius:8px;outline:none;transition:.2s;}
-.code-digit:focus{border-color:#38bdf8;box-shadow:0 0 0 3px rgba(56,189,248,.15);}
+.code-digit:focus{border-color:#4a6cf7;box-shadow:0 0 0 3px rgba(74,108,247,.15);}
 /* Step labels */
 .step-badge{display:inline-flex;align-items:center;gap:6px;background:#1e293b;color:#38bdf8;font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:12px;letter-spacing:.05em;text-transform:uppercase;}
 </style>
@@ -91,8 +93,11 @@ input:-webkit-autofill:focus{
 <body>
 <div class="login-wrapper">
     <div class="login-header">
-        <div class="logo-box"><img src="q.jpg" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:12px;"></div>
-        <h1>The<span>Desktop</span></h1>
+        <div class="logo-box">
+            <div class="logo-q">Q</div>
+            <div class="logo-solutions">SOLUTIONS</div>
+        </div>
+        <h1>Q-<span>Solutions</span></h1>
         <p>Admin Control Panel</p>
     </div>
     <div class="login-card">
