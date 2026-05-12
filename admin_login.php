@@ -11,87 +11,113 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="css/style.css">
 <style>
+/* ── Page background — matches index.php ── */
+body,html{height:100%;margin:0;padding:0;font-family:'Inter',sans-serif;
+background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);
+min-height:100vh;overflow-x:hidden;}
+
+/* ── Header / logo ── */
+.login-header{text-align:center;margin-bottom:28px;}
+.login-header h1{font-size:2rem;color:white;font-weight:700;margin:10px 0 4px;letter-spacing:-.5px;}
 .login-header h1 span{color:#7b9cff;}
-.logo-box{background:transparent!important;display:flex;align-items:center;justify-content:center;gap:0;margin:0 auto 15px;width:fit-content;height:auto;}
-.logo-q{background:#1e2a78;border:3px solid white;width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:white;letter-spacing:-1px;}
-.logo-solutions{background:#dde2f0;height:44px;padding:0 12px;border-radius:0 8px 8px 0;display:flex;align-items:center;font-size:1rem;font-weight:700;color:#1e2a78;letter-spacing:2px;text-transform:uppercase;}
+.login-header p{color:#8aa0c5;font-size:1rem;margin:0;}
 
-/* Login card layout */
-.login-card{background:#1a2a3f;border:1px solid #243b5e;border-radius:16px;padding:32px;width:420px;max-width:94vw;margin:30px auto;}
-.login-header{text-align:center;margin-bottom:24px;}
+.logo-box{display:flex;align-items:center;justify-content:center;gap:0;margin:0 auto 14px;width:fit-content;}
+.logo-q{background:#1e2a78;border:3px solid white;width:48px;height:48px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:900;color:white;}
+.logo-solutions{background:#dde2f0;height:48px;padding:0 14px;border-radius:0 9px 9px 0;display:flex;align-items:center;font-size:1rem;font-weight:700;color:#1e2a78;letter-spacing:2px;text-transform:uppercase;}
 
-/* Input group */
-.input-group{margin-bottom:0;}
-.input-group label{display:block;font-size:12px;color:#8aa0c5;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
-.input-group input,
-.pass-wrap input{
-    width:100%;padding:11px 14px;
-    background:#0d1b2e;
-    border:1px solid #2d4a6e;
-    color:white;border-radius:8px;
-    font-size:0.9rem;outline:none;
-    box-sizing:border-box;transition:.2s;
+/* ── White card — matches index.php portal-card ── */
+.login-card{
+    background:#ffffff;
+    border-radius:24px;
+    padding:40px 36px;
+    width:420px;max-width:94vw;
+    margin:0 auto 40px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.35);
+    border-bottom:8px solid #1e2a78;
+    animation:fadeIn .8s ease-out;
 }
-.input-group input:focus,
-.pass-wrap input:focus{border-color:#4a6cf7;box-shadow:0 0 0 3px rgba(74,108,247,.15);}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-/* Fix browser autofill white background */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus{
-    -webkit-box-shadow:0 0 0 1000px #0d1b2e inset!important;
-    -webkit-text-fill-color:white!important;
-    border:1px solid #2d4a6e!important;
+.login-card h2{color:#1e293b;margin:0 0 20px;font-size:1.2rem;text-align:center;font-weight:700;}
+
+/* ── Inputs ── */
+.input-group{margin-bottom:0;}
+.input-group label{display:block;font-size:11px;color:#64748b;margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;}
+.input-group input,.pass-wrap input{
+    width:100%;padding:11px 14px;
+    background:#f8fafc;border:1px solid #e2e8f0;
+    color:#1e293b;border-radius:8px;
+    font-size:.9rem;outline:none;box-sizing:border-box;transition:.2s;
+}
+.input-group input:focus,.pass-wrap input:focus{border-color:#1e2a78;box-shadow:0 0 0 3px rgba(30,42,120,.12);}
+input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{
+    -webkit-box-shadow:0 0 0 1000px #f8fafc inset!important;
+    -webkit-text-fill-color:#1e293b!important;
+    border:1px solid #e2e8f0!important;
     transition:background-color 5000s ease-in-out 0s;
 }
 
-.login-btn{background:#1e2a78;border:none;color:white;padding:12px;width:100%;border-radius:8px;cursor:pointer;font-weight:bold;transition:.3s;font-size:14px;margin-top:4px;}
-.login-btn:hover{background:#2d3eaa;}
+/* ── Login button ── */
+.login-btn{background:#1e2a78;border:none;color:white;padding:13px;width:100%;border-radius:10px;cursor:pointer;font-weight:700;transition:.3s;font-size:14px;margin-top:4px;letter-spacing:.3px;}
+.login-btn:hover{background:#2d3eaa;transform:translateY(-1px);box-shadow:0 4px 16px rgba(30,42,120,.3);}
 
-/* Password wrapper */
+/* ── Password toggle ── */
 .pass-wrap{position:relative;display:flex;align-items:center;}
 .pass-wrap input{padding-right:44px;}
-.eye-btn{position:absolute;right:12px;background:none;border:none;color:#64748b;cursor:pointer;font-size:15px;padding:0;display:flex;align-items:center;transition:.2s;}
-.eye-btn:hover{color:#4a6cf7;}
-.error-msg{background:#f8d7da;color:#721c24;padding:10px;border-radius:5px;margin-bottom:15px;text-align:center;font-size:.9rem;border:1px solid #f5c6cb;}
-.success-msg{background:#d4edda;color:#155724;padding:10px;border-radius:5px;margin-bottom:15px;text-align:center;font-size:.9rem;border:1px solid #c3e6cb;}
-.divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#64748b;font-size:.82rem;}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:#2d3748;}
-.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px;background:white;color:#333;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem;transition:.2s;margin-bottom:4px;box-sizing:border-box;}
-.google-btn:hover{background:#f1f3f4;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.eye-btn{position:absolute;right:12px;background:none;border:none;color:#94a3b8;cursor:pointer;font-size:15px;padding:0;display:flex;align-items:center;transition:.2s;}
+.eye-btn:hover{color:#1e2a78;}
+
+/* ── Messages ── */
+.error-msg{background:#fef2f2;color:#991b1b;padding:10px;border-radius:8px;margin-bottom:15px;text-align:center;font-size:.88rem;border:1px solid #fecaca;}
+.success-msg{background:#f0fdf4;color:#166534;padding:10px;border-radius:8px;margin-bottom:15px;text-align:center;font-size:.88rem;border:1px solid #bbf7d0;}
+
+/* ── Divider ── */
+.divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#94a3b8;font-size:.82rem;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#e2e8f0;}
+
+/* ── Google button ── */
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px;background:white;color:#333;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem;transition:.2s;margin-bottom:4px;box-sizing:border-box;}
+.google-btn:hover{background:#f8fafc;box-shadow:0 2px 8px rgba(0,0,0,.1);}
 .google-btn img{width:20px;height:20px;}
+
+/* ── Forgot row ── */
 .forgot-row{text-align:right;margin:8px 0 16px;}
-.forgot-row a{color:#8aa0c5;font-size:.82rem;text-decoration:none;cursor:pointer;}
-.forgot-row a:hover{color:#4a6cf7;}
-/* Modal */
+.forgot-row a{color:#64748b;font-size:.82rem;text-decoration:none;cursor:pointer;}
+.forgot-row a:hover{color:#1e2a78;}
+
+/* ── Bottom link ── */
+.login-card a[href="register.php"]{color:#1e2a78;font-weight:700;}
+
+/* ── Modal ── */
 .modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;}
 .modal-bg.show{display:flex;}
-.modal-card{background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:30px;width:400px;max-width:94vw;}
-.modal-card h3{margin:0 0 6px;color:#38bdf8;font-size:17px;display:flex;align-items:center;gap:8px;}
+.modal-card{background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;padding:32px;width:400px;max-width:94vw;border-bottom:6px solid #1e2a78;}
+.modal-card h3{margin:0 0 6px;color:#1e2a78;font-size:17px;display:flex;align-items:center;gap:8px;}
 .modal-card p{color:#64748b;font-size:.84rem;margin:0 0 18px;}
-.modal-input{width:100%;padding:10px 12px;background:#020810;border:1px solid #1e293b;color:white;border-radius:8px;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:12px;}
-.modal-input:focus{border-color:#4a6cf7;}
-.modal-btn{width:100%;padding:11px;background:#1e2a78;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.9rem;}
+.modal-input{width:100%;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b;border-radius:8px;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:12px;}
+.modal-input:focus{border-color:#1e2a78;}
+.modal-btn{width:100%;padding:12px;background:#1e2a78;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.9rem;}
 .modal-btn:hover{background:#2d3eaa;}
 .modal-cancel{display:block;text-align:center;margin-top:12px;color:#64748b;font-size:.83rem;cursor:pointer;text-decoration:underline;}
-.modal-cancel:hover{color:#8aa0c5;}
-.sending-state{text-align:center;padding:20px;color:#8aa0c5;}
-.sending-state i{font-size:32px;color:#38bdf8;display:block;margin-bottom:12px;animation:spin 1s linear infinite;}
+.modal-cancel:hover{color:#1e2a78;}
+.sending-state{text-align:center;padding:20px;color:#64748b;}
+.sending-state i{font-size:32px;color:#1e2a78;display:block;margin-bottom:12px;animation:spin 1s linear infinite;}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .sent-state{text-align:center;padding:10px 0;}
 .sent-state i{font-size:40px;color:#2ecc71;display:block;margin-bottom:10px;}
-.sent-state h4{color:white;margin:0 0 6px;}
-.sent-state p{color:#8aa0c5;font-size:.84rem;margin:0;}
+.sent-state h4{color:#1e293b;margin:0 0 6px;}
+.sent-state p{color:#64748b;font-size:.84rem;margin:0;}
 /* Code input boxes */
 .code-inputs{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
-.code-digit{width:46px;height:54px;text-align:center;font-size:1.5rem;font-weight:700;background:#020810;border:2px solid #1e293b;color:white;border-radius:8px;outline:none;transition:.2s;}
-.code-digit:focus{border-color:#4a6cf7;box-shadow:0 0 0 3px rgba(74,108,247,.15);}
+.code-digit{width:46px;height:54px;text-align:center;font-size:1.5rem;font-weight:700;background:#f8fafc;border:2px solid #e2e8f0;color:#1e293b;border-radius:8px;outline:none;transition:.2s;}
+.code-digit:focus{border-color:#1e2a78;box-shadow:0 0 0 3px rgba(30,42,120,.12);}
 /* Step labels */
-.step-badge{display:inline-flex;align-items:center;gap:6px;background:#1e293b;color:#38bdf8;font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:12px;letter-spacing:.05em;text-transform:uppercase;}
+.step-badge{display:inline-flex;align-items:center;gap:6px;background:#eef2ff;color:#1e2a78;font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:12px;letter-spacing:.05em;text-transform:uppercase;}
 </style>
 </head>
-<body>
-<div class="login-wrapper">
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;box-sizing:border-box;">
+<div style="width:100%;max-width:500px;animation:fadeIn .8s ease-out;">
     <div class="login-header">
         <div class="logo-box">
             <div class="logo-q">Q</div>
@@ -147,7 +173,7 @@ input:-webkit-autofill:focus{
             if (inp.type === 'password') {
                 inp.type = 'text';
                 icon.classList.replace('fa-eye', 'fa-eye-slash');
-                btn.style.color = '#38bdf8';
+                btn.style.color = '#1e2a78';
             } else {
                 inp.type = 'password';
                 icon.classList.replace('fa-eye-slash', 'fa-eye');
@@ -158,7 +184,7 @@ input:-webkit-autofill:focus{
 
         <div style="text-align:center;margin-top:15px;">
             <span style="color:#64748b;font-size:.85rem;">Need an account?</span>
-            <a href="register.php" style="color:#1fb6ff;text-decoration:none;font-size:.85rem;font-weight:bold;"> Register Here</a>
+            <a href="register.php" style="color:#1e2a78;text-decoration:none;font-size:.85rem;font-weight:bold;"> Register Here</a>
         </div>
     </div>
 </div>
