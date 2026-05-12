@@ -163,29 +163,5 @@ setInterval(checkOvertime, 10000);
         document.body.classList.remove('light-mode');
     }
     document.documentElement.classList.remove('light-mode-pre');
-
-    // Update toggle icon if button exists on this page
-    const icon = document.getElementById('themeIcon');
-    if(icon){
-        if(saved === 'light'){
-            icon.classList.replace('fa-sun','fa-moon');
-        } else {
-            icon.classList.replace('fa-moon','fa-sun');
-        }
-    }
 })();
 </script>
-
-<!-- ── Theme Toggle Button (all pages) ── -->
-<button class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Mode" onclick="
-    var isLight = document.body.classList.toggle('light-mode');
-    var newTheme = isLight ? 'light' : 'dark';
-    localStorage.setItem('settings_theme', newTheme);
-    var icon = document.getElementById('themeIcon');
-    if(icon){
-        if(isLight){ icon.classList.replace('fa-sun','fa-moon'); }
-        else        { icon.classList.replace('fa-moon','fa-sun'); }
-    }
-">
-    <i class="fas fa-sun" id="themeIcon"></i>
-</button>
