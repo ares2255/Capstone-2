@@ -14,8 +14,8 @@ $current = basename($_SERVER['PHP_SELF']);
 
 <nav class="navbar">
     <div class="nav-brand">
-        <i class="fas fa-desktop"></i>
-        <span>The<strong>Desktop</strong></span>
+        <div class="nav-logo-q">Q</div>
+        <div class="nav-logo-solutions">SOLUTIONS</div>
     </div>
     <div class="nav-links">
         <a href="counter.php" class="<?= $current=='counter.php'?'active':'' ?>">
