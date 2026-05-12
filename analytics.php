@@ -67,33 +67,36 @@ try {
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Q-Solutions | Analytics</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="includes/navbar.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 html{overflow-y:scroll;scrollbar-gutter:stable;}
-body{background-color:#050b14;background-image:linear-gradient(rgba(19,39,66,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(19,39,66,.3) 1px,transparent 1px);background-size:50px 50px;color:white;font-family:'Segoe UI',sans-serif;margin:0;min-height:100vh;}
+body{background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);color:white;font-family:'Inter',sans-serif;margin:0;min-height:100vh;}
 .main-container{max-width:1400px;margin:0 auto;padding:36px 40px;}
 .page-header{margin-bottom:28px;}
-.page-header h2{margin:0 0 4px;font-size:22px;}
+.page-header h2{margin:0 0 4px;font-size:22px;font-weight:700;}
 .page-header p{color:#8aa0c5;font-size:13px;margin:0;}
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:28px;}
-.stat-card{background:rgba(10,25,47,.85);border:1px solid #132742;padding:24px;border-radius:12px;}
-.stat-card h2{margin:0 0 6px;font-size:26px;}
+.stat-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:24px;border-radius:16px;border-bottom:4px solid #1e2a78;transition:transform .2s,box-shadow .2s;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(74,108,247,.15);}
+.stat-card h2{margin:0 0 6px;font-size:26px;font-weight:700;}
 .stat-card small{color:#8aa0c5;text-transform:uppercase;font-size:10px;letter-spacing:1px;}
 .stat-card .badge{font-size:11px;padding:3px 8px;border-radius:20px;margin-left:8px;}
 .up{background:rgba(46,204,113,.15);color:#2ecc71;}
 .down{background:rgba(255,77,77,.15);color:#ff4d4d;}
 .chart-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px;}
 .chart-grid-bottom{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-.chart-card{background:rgba(10,25,47,.85);border:1px solid #132742;border-radius:12px;padding:24px;}
-.chart-card h3{margin:0 0 20px;font-size:14px;color:#38bdf8;display:flex;align-items:center;gap:8px;}
+.chart-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px;}
+.chart-card h3{margin:0 0 20px;font-size:14px;color:#7b9cff;display:flex;align-items:center;gap:8px;}
 .date-filter{display:flex;align-items:center;gap:10px;margin-bottom:28px;flex-wrap:wrap;}
 .date-filter label{color:#8aa0c5;font-size:12px;text-transform:uppercase;letter-spacing:1px;}
-.date-filter input{background:#0a192f;border:1px solid #132742;color:white;padding:8px 12px;border-radius:8px;font-size:13px;outline:none;}
+.date-filter input{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:white;padding:8px 12px;border-radius:8px;font-size:13px;outline:none;}
 .date-filter input::-webkit-calendar-picker-indicator{filter:invert(1);}
-.btn-view{background:#38bdf8;color:#000;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-view{background:#1e2a78;color:white;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:.2s;}
+.btn-view:hover{background:#2d3eaa;}
 .compare-box{display:flex;gap:16px;}
-.compare-item{flex:1;background:rgba(10,25,47,.85);border:1px solid #132742;border-radius:12px;padding:20px;text-align:center;}
+.compare-item{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:20px;text-align:center;}
 .compare-item .label{color:#8aa0c5;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
 .compare-item .amount{font-size:24px;font-weight:bold;}
 .compare-item.today-box .amount{color:#2ecc71;}
