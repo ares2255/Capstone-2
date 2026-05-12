@@ -5,13 +5,12 @@ $current = basename($_SERVER['PHP_SELF']);
 <script>
 (function(){
     if(localStorage.getItem('settings_theme') === 'light'){
-        document.documentElement.classList.add('light-mode-pre');
+        document.documentElement.classList.add('light-mode');
+    } else {
+        document.documentElement.classList.remove('light-mode');
     }
 })();
 </script>
-<style>
-html.light-mode-pre body { background: linear-gradient(135deg,#e8edf5 0%,#f0f4fb 50%,#e4ecf7 100%) !important; }
-</style>
 <!-- Global Overtime Bar -->
 <div class="overtime-bar" id="overtimeBar">
     <div class="overtime-bar-inner">
