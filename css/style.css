@@ -426,20 +426,15 @@ border-color:#00d4ff;
 
 /* LOGIN BUTTON */
 
+/* LOGIN BUTTON - overridden per page */
 .login-card .login-btn{
-width:100%;
-padding:14px;
-border:none;
-border-radius:10px;
-background:#1f7285;
+background:#1e2a78;
 color:white;
 font-size:16px;
-cursor:pointer;
-margin-top:10px;
 }
 
 .login-card .login-btn:hover{
-background:#1ba0b9;
+background:#2d3eaa;
 }
 
 
