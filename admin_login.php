@@ -12,7 +12,7 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 <link rel="stylesheet" href="css/style.css">
 <style>
 .login-header h1 span{color:#e74c3c;}
-.logo-box{background:#c0392b!important;width:60px;height:60px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 15px;color:white;font-size:28px;box-shadow:0 4px 15px rgba(192,57,43,.4);}
+.logo-box{background:transparent!important;width:90px;height:90px;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 15px;box-shadow:none;overflow:hidden;}
 
 /* Login card layout */
 .login-card{background:#1a2a3f;border:1px solid #243b5e;border-radius:16px;padding:32px;width:420px;max-width:94vw;margin:30px auto;}
