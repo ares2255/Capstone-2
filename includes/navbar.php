@@ -57,7 +57,8 @@ function updateTime(){
 updateTime(); setInterval(updateTime,1000);
 
 // ── Sound ──
-let _ctx=null, _alarming=false, _muted=false;
+let _ctx=null, _alarming=false;
+let _muted = localStorage.getItem('ot_muted') === 'true';
 
 function _getCtx(){
     if(!_ctx) _ctx=new(window.AudioContext||window.webkitAudioContext)();
@@ -81,6 +82,7 @@ function _beep(){
 
 function toggleSound(){
     _muted = !_muted;
+    localStorage.setItem('ot_muted', _muted);
     const btn = document.getElementById('otSoundBtn');
     if(_muted){
         btn.textContent = '🔇 Sound Off';
@@ -88,14 +90,26 @@ function toggleSound(){
     } else {
         btn.textContent = '🔊 Sound On';
         btn.style.background = '';
-        _beep(); // restart beeping
+        _beep();
     }
 }
 
-// Auto-start sound on first interaction
-document.addEventListener('click', function _trySound(){
+// Apply saved mute state to button once bar is visible
+function _applyMuteBtn(){
+    const btn = document.getElementById('otSoundBtn');
+    if(!btn) return;
+    if(_muted){
+        btn.textContent = '🔇 Sound Off';
+        btn.style.background = 'rgba(0,0,0,0.3)';
+    } else {
+        btn.textContent = '🔊 Sound On';
+        btn.style.background = '';
+    }
+}
+
+document.addEventListener('click', function(){
     if(_alarming && !_muted && _ctx && _ctx.state==='suspended') _ctx.resume();
-}, {once:false});
+});
 
 // ── Overtime Checker ──
 function checkOvertime(){
@@ -111,6 +125,7 @@ function checkOvertime(){
             badge.style.display='flex';
             cnt.textContent=d.count;
             text.textContent='OVERTIME — '+d.names.join(', ')+' exceeded time limit!';
+            _applyMuteBtn();
             if(!_alarming){
                 _alarming=true;
                 if(!_muted) _beep();
