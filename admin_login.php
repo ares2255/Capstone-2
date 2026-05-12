@@ -117,7 +117,7 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
 </style>
 </head>
 <body style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;box-sizing:border-box;">
-<div style="width:100%;max-width:500px;animation:fadeIn .8s ease-out;">
+<div style="width:100%;max-width:500px;">
     <div class="login-header">
         <div class="logo-box">
             <div class="logo-q">Q</div>
