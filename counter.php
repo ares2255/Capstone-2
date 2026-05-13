@@ -467,11 +467,15 @@ function closeStartModal() { document.getElementById('startModal').classList.rem
 
 function selectPkg(btn, mins) {
     selectedMins = mins;
-    document.querySelectorAll('.pkg-btn,.btn-open-time').forEach(b => b.classList.remove('selected'));
+    // Lock all buttons immediately — prevent double tap
+    document.querySelectorAll('.pkg-btn,.btn-open-time').forEach(b => {
+        b.disabled = true;
+        b.style.opacity = '0.5';
+        b.style.pointerEvents = 'none';
+    });
     btn.classList.add('selected');
-    setTimeout(() => {
-        window.location.href = 'start_session.php?id=' + currentPcId + '&mins=' + selectedMins;
-    }, 200);
+    btn.style.opacity = '1';
+    window.location.href = 'start_session.php?id=' + currentPcId + '&mins=' + selectedMins;
 }
 
 function openEndModal(id, name) {
@@ -507,6 +511,15 @@ function confirmAddTime(mins) {
 }
 
 function endSessionNow(id, name) {
+    // Lock the confirm button immediately — prevent double tap
+    const confirmBtn = document.getElementById('confirmEndBtn');
+    if (confirmBtn._locked) return;
+    confirmBtn._locked = true;
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Ending...';
+    confirmBtn.style.opacity = '0.6';
+    confirmBtn.style.pointerEvents = 'none';
+
     // Close modal instantly
     closeEndModal();
 
