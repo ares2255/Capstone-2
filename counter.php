@@ -523,56 +523,24 @@ function endSessionNow(id, name) {
     // Close modal instantly
     closeEndModal();
 
-    // Immediately update the card UI — no waiting
-    const card    = document.getElementById('pc-card-' + id);
-    const timer   = document.getElementById('timer-' + id);
-    const badge   = document.getElementById('overtime-badge-' + id);
-    const dot     = card ? card.querySelector('.status-dot') : null;
-    const hint    = card ? card.querySelector('.action-hint') : null;
+    // Grey out the card and stop the timer visually while waiting
+    const card  = document.getElementById('pc-card-' + id);
+    const timer = document.getElementById('timer-' + id);
+    const badge = document.getElementById('overtime-badge-' + id);
+    if (timer) { timer.textContent = '⏳'; timer.className = 'pc-timer timer-avail'; }
+    if (badge) { badge.classList.remove('show'); }
+    if (card)  { card.style.opacity = '0.5'; card.style.pointerEvents = 'none'; }
 
-    if (card)  {
-        card.classList.remove('in-use','overtime');
-        card.classList.add('available');
-        card.dataset.action = 'start';
-    }
-    if (timer)  { timer.textContent = '—'; timer.className = 'pc-timer'; }
-    if (badge)  { badge.classList.remove('show'); }
-    if (dot)    { dot.innerHTML = '<span class="dot dot-ok"></span><span class="text-ok">AVAILABLE</span>'; }
-    if (hint)   { hint.innerHTML = '<i class="fas fa-hand-pointer"></i> Click to start'; }
+    showToast('Ending session for ' + name + '...', 'info');
 
-    // Play a short confirmation beep
-    try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.connect(g); g.connect(ctx.destination);
-        o.type = 'sine'; o.frequency.value = 660;
-        g.gain.setValueAtTime(0.2, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-        o.start(); o.stop(ctx.currentTime + 0.25);
-    } catch(e) {}
-
-    showToast('Session ended for ' + name, 'success');
-
-    // Fire the actual PHP end in the background
+    // Wait for server to actually save, THEN reload so everything is accurate
     fetch('end_session.php?id=' + id)
         .then(() => {
-            // Silently refresh stats after 1s so revenue/session counts update
-            setTimeout(() => {
-                // Only reload stat numbers, not the whole page
-                fetch('counter.php?ajax_stats=1')
-                    .then(r => r.text())
-                    .then(html => {
-                        const tmp = document.createElement('div');
-                        tmp.innerHTML = html;
-                        ['stat-rev','stat-sessions','stat-active'].forEach(sid => {
-                            const src = tmp.querySelector('#' + sid);
-                            const dst = document.getElementById(sid);
-                            if (src && dst) dst.textContent = src.textContent;
-                        });
-                    }).catch(()=>{});
-            }, 800);
+            window.location.href = 'counter.php';
         })
-        .catch(() => {});
+        .catch(() => {
+            window.location.reload();
+        });
 }
 
 function copyUrl() {
