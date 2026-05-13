@@ -255,15 +255,15 @@ body{
     <div class="stat-bar">
         <div class="stat-box">
             <div class="stat-icon si-rev"><i class="fas fa-peso-sign"></i></div>
-            <div class="stat-info"><h3 style="color:#00e0ff;">₱<?= number_format($rev,2) ?></h3><p>Today's Revenue</p></div>
+            <div class="stat-info"><h3 id="stat-rev" style="color:#00e0ff;">₱<?= number_format($rev,2) ?></h3><p>Today's Revenue</p></div>
         </div>
         <div class="stat-box">
             <div class="stat-icon si-sess"><i class="fas fa-desktop"></i></div>
-            <div class="stat-info"><h3 style="color:#19ff9c;"><?= $sess_count ?></h3><p>Sessions Today</p></div>
+            <div class="stat-info"><h3 id="stat-sessions" style="color:#19ff9c;"><?= $sess_count ?></h3><p>Sessions Today</p></div>
         </div>
         <div class="stat-box">
             <div class="stat-icon si-active"><i class="fas fa-circle-dot"></i></div>
-            <div class="stat-info"><h3 style="color:#ffa500;"><?= $active_count ?></h3><p>Currently Active</p></div>
+            <div class="stat-info"><h3 id="stat-active" style="color:#ffa500;"><?= $active_count ?></h3><p>Currently Active</p></div>
         </div>
     </div>
 
@@ -481,7 +481,7 @@ function openEndModal(id, name) {
 
     document.getElementById('endModalTitle').textContent = 'End session for ' + name + '?';
     document.getElementById('endModalSub').textContent   = 'This will stop the session and calculate the final cost.';
-    document.getElementById('confirmEndBtn').onclick = () => { window.location.href = 'end_session.php?id=' + id; };
+    document.getElementById('confirmEndBtn').onclick = () => endSessionNow(id, name);
 
     // Show "Add Time" button only when PC is in overtime
     document.getElementById('btnSwitchAddTime').style.display = isOvertime ? 'flex' : 'none';
@@ -504,6 +504,62 @@ function showEndView() {
 }
 function confirmAddTime(mins) {
     window.location.href = 'add_time.php?id=' + currentPcId + '&mins=' + mins;
+}
+
+function endSessionNow(id, name) {
+    // Close modal instantly
+    closeEndModal();
+
+    // Immediately update the card UI — no waiting
+    const card    = document.getElementById('pc-card-' + id);
+    const timer   = document.getElementById('timer-' + id);
+    const badge   = document.getElementById('overtime-badge-' + id);
+    const dot     = card ? card.querySelector('.status-dot') : null;
+    const hint    = card ? card.querySelector('.action-hint') : null;
+
+    if (card)  {
+        card.classList.remove('in-use','overtime');
+        card.classList.add('available');
+        card.dataset.action = 'start';
+    }
+    if (timer)  { timer.textContent = '—'; timer.className = 'pc-timer'; }
+    if (badge)  { badge.classList.remove('show'); }
+    if (dot)    { dot.innerHTML = '<span class="dot dot-ok"></span><span class="text-ok">AVAILABLE</span>'; }
+    if (hint)   { hint.innerHTML = '<i class="fas fa-hand-pointer"></i> Click to start'; }
+
+    // Play a short confirmation beep
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sine'; o.frequency.value = 660;
+        g.gain.setValueAtTime(0.2, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        o.start(); o.stop(ctx.currentTime + 0.25);
+    } catch(e) {}
+
+    showToast('Session ended for ' + name, 'success');
+
+    // Fire the actual PHP end in the background
+    fetch('end_session.php?id=' + id)
+        .then(() => {
+            // Silently refresh stats after 1s so revenue/session counts update
+            setTimeout(() => {
+                // Only reload stat numbers, not the whole page
+                fetch('counter.php?ajax_stats=1')
+                    .then(r => r.text())
+                    .then(html => {
+                        const tmp = document.createElement('div');
+                        tmp.innerHTML = html;
+                        ['stat-rev','stat-sessions','stat-active'].forEach(sid => {
+                            const src = tmp.querySelector('#' + sid);
+                            const dst = document.getElementById(sid);
+                            if (src && dst) dst.textContent = src.textContent;
+                        });
+                    }).catch(()=>{});
+            }, 800);
+        })
+        .catch(() => {});
 }
 
 function copyUrl() {
