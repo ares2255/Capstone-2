@@ -15,14 +15,26 @@ $rates         = $pdo->query("SELECT bw_rate, color_rate FROM settings LIMIT 1")
 $db_bw_rate    = $rates['bw_rate']    ?? 5.00;
 $db_color_rate = $rates['color_rate'] ?? 15.00;
 
-$today    = date('Y-m-d');
-$stQ      = $pdo->prepare("SELECT COALESCE(SUM(price),0) as rev, COALESCE(SUM(pages),0) as pgs FROM print_jobs WHERE DATE(created_at)=:d");
-$stQ->execute([':d' => $today]);
-$stats    = $stQ->fetch();
-$today_rev   = floatval($stats['rev']);
-$today_pages = intval($stats['pgs']);
+$today       = date('Y-m-d');
+$view_date   = (isset($_GET['view_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['view_date']))
+               ? $_GET['view_date'] : $today;
+$is_today    = ($view_date === $today);
 
-$logs = $pdo->query("SELECT * FROM print_jobs ORDER BY created_at DESC LIMIT 15")->fetchAll();
+$stQ = $pdo->prepare("SELECT COALESCE(SUM(price),0) as rev, COALESCE(SUM(pages),0) as pgs FROM print_jobs WHERE DATE(created_at)=:d");
+$stQ->execute([':d' => $view_date]);
+$stats       = $stQ->fetch();
+$view_rev    = floatval($stats['rev']);
+$view_pages  = intval($stats['pgs']);
+
+// Today stats for the stat boxes
+$stQ->execute([':d' => $today]);
+$todayStats   = $stQ->fetch();
+$today_rev    = floatval($todayStats['rev']);
+$today_pages  = intval($todayStats['pgs']);
+
+$logsQ = $pdo->prepare("SELECT * FROM print_jobs WHERE DATE(created_at)=:d ORDER BY created_at DESC");
+$logsQ->execute([':d' => $view_date]);
+$logs  = $logsQ->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -76,10 +88,37 @@ input{width:100%;padding:11px;background:rgba(255,255,255,.05);border:1px solid 
         <h2 style="margin:0 0 4px;font-size:22px;">Printing Management</h2>
         <p style="color:#8aa0c5;font-size:13px;margin:0 0 24px;">Record and track customer print jobs</p>
         <div class="panel-card">
-            <h3 style="color:#38bdf8;margin:0 0 18px;font-size:15px;">Recent Print Logs</h3>
+            <!-- Date Filter -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+                <h3 style="color:#38bdf8;margin:0;font-size:15px;">
+                    <?= $is_today ? 'Today\'s Print Logs' : 'Print Logs — ' . date('M d, Y', strtotime($view_date)) ?>
+                    <?php if(!$is_today): ?>
+                        <a href="printing.php" style="font-size:11px;color:#8aa0c5;margin-left:10px;text-decoration:none;">← Back to Today</a>
+                    <?php endif; ?>
+                </h3>
+                <form method="GET" style="display:flex;align-items:center;gap:8px;">
+                    <label style="font-size:11px;color:#8aa0c5;text-transform:uppercase;letter-spacing:.5px;">View Date</label>
+                    <input type="date" name="view_date" value="<?= htmlspecialchars($view_date) ?>" max="<?= $today ?>"
+                        style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:white;font-size:13px;cursor:pointer;"
+                        onchange="this.form.submit()">
+                </form>
+            </div>
+            <!-- Summary for selected date -->
+            <?php if(!$is_today): ?>
+            <div style="display:flex;gap:12px;margin-bottom:16px;padding:10px 14px;background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.2);border-radius:10px;">
+                <span style="font-size:13px;color:#8aa0c5;">Revenue: <strong style="color:#2ecc71;">₱<?= number_format($view_rev,2) ?></strong></span>
+                <span style="color:#4a5f7a;">|</span>
+                <span style="font-size:13px;color:#8aa0c5;">Pages: <strong style="color:#38bdf8;"><?= $view_pages ?></strong></span>
+                <span style="color:#4a5f7a;">|</span>
+                <span style="font-size:13px;color:#8aa0c5;">Jobs: <strong style="color:white;"><?= count($logs) ?></strong></span>
+            </div>
+            <?php endif; ?>
             <table>
                 <thead><tr><th>Type</th><th>Pages</th><th>Price</th><th>Time</th><th>Action</th></tr></thead>
                 <tbody>
+                <?php if(empty($logs)): ?>
+                <tr><td colspan="5" style="text-align:center;color:#8aa0c5;padding:28px 0;">No print jobs on <?= date('M d, Y', strtotime($view_date)) ?></td></tr>
+                <?php else: ?>
                 <?php foreach($logs as $log): ?>
                 <tr>
                     <td><span class="type-badge"><?= htmlspecialchars($log['type']) ?></span></td>
@@ -89,6 +128,7 @@ input{width:100%;padding:11px;background:rgba(255,255,255,.05);border:1px solid 
                     <td><button class="void-btn" onclick="voidPrint(<?= $log['id'] ?>)"><i class="fas fa-trash-alt"></i></button></td>
                 </tr>
                 <?php endforeach; ?>
+                <?php endif; ?>
                 </tbody>
             </table>
         </div>
