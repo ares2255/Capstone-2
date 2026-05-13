@@ -142,7 +142,8 @@ input{width:100%;padding:11px;background:rgba(255,255,255,.05);border:1px solid 
         </div>
         <div class="panel-card">
             <h3 style="color:#38bdf8;margin:0 0 6px;font-size:15px;"><i class="fas fa-plus-circle"></i> New Print Job</h3>
-            <form action="save_print.php" method="POST">
+            <form action="save_print.php" method="POST" id="printForm">
+                <input type="hidden" name="submit_token" id="submit_token" value="<?= bin2hex(random_bytes(16)) ?>">
                 <label>Paper Type</label>
                 <div class="toggle-row">
                     <button type="button" class="toggle-btn active" onclick="setType('BW',this)">B&amp;W</button>
@@ -207,36 +208,14 @@ function calculateTotal(){
 }
 window.onload = calculateTotal;
 
-// Prevent double submission - block at BOTH click and submit level
-(function(){
-    const form = document.querySelector('.panel-card form');
-    const btn  = document.getElementById('confirmBtn');
-    let locked = false;
-
-    function lock() {
-        locked = true;
-        btn.disabled = true;
-        btn.textContent = 'Saving...';
-        btn.style.opacity = '0.6';
-        btn.style.pointerEvents = 'none';
-    }
-
-    // Block on mousedown (fires before click, before submit)
-    btn.addEventListener('mousedown', function(e) {
-        if (locked) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
-    });
-
-    // Block on touchstart for mobile
-    btn.addEventListener('touchstart', function(e) {
-        if (locked) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
-    }, { passive: false });
-
-    // Actual lock happens on form submit
-    form.addEventListener('submit', function(e) {
-        if (locked) { e.preventDefault(); return false; }
-        lock();
-    });
-})();
+// Disable button immediately on first click
+document.getElementById('confirmBtn').addEventListener('click', function() {
+    this.disabled = true;
+    this.textContent = 'Saving...';
+    this.style.opacity = '0.6';
+    this.style.pointerEvents = 'none';
+    document.getElementById('printForm').submit();
+});
 let targetVoidId=null;
 function voidPrint(id){targetVoidId=id;document.getElementById('voidModal').style.display='flex';document.getElementById('confirmVoidBtn').onclick=()=>{window.location.href='void_print.php?id='+targetVoidId;};}
 function closeVoidModal(){document.getElementById('voidModal').style.display='none';}
