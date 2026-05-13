@@ -17,8 +17,8 @@ html.light-mode .stat-box{background:#ffffff!important;border-color:#d1dce8!impo
 html.light-mode .stat-info h3,html.light-mode h2,html.light-mode h3{color:#1e293b!important}
 html.light-mode .stat-info p,html.light-mode .stat-lbl,html.light-mode small,html.light-mode .text-muted{color:#64748b!important}
 html.light-mode .page-header p{color:#4a5f7a!important}
-html.light-mode .pc-card{background:#e8eef8!important;border-color:#b8cce0!important;box-shadow:0 2px 12px rgba(30,42,120,.10)!important}
-html.light-mode .pc-card:hover{background:#dde6f5!important;box-shadow:0 8px 28px rgba(30,42,120,.15)!important}
+html.light-mode .pc-card{background:#ffffff!important;border:2px solid #a0b4d0!important;box-shadow:0 4px 16px rgba(30,42,120,.18)!important}
+html.light-mode .pc-card:hover{background:#f0f5ff!important;border-color:#1e2a78!important;box-shadow:0 8px 28px rgba(30,42,120,.25)!important}
 html.light-mode .pc-name,.pc-card .timer-avail{color:#1e293b!important}
 html.light-mode .action-hint{color:#64748b!important}
 html.light-mode input[type="number"],html.light-mode input[type="text"],html.light-mode input[type="password"],html.light-mode input[type="date"],html.light-mode input[type="email"],html.light-mode textarea{background:#f4f7fb!important;border-color:#c8d5e8!important;color:#1e293b!important}
