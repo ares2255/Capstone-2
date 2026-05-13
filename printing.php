@@ -207,17 +207,34 @@ function calculateTotal(){
 }
 window.onload = calculateTotal;
 
-// Prevent double submission
+// Prevent double submission - block at BOTH click and submit level
 (function(){
     const form = document.querySelector('.panel-card form');
     const btn  = document.getElementById('confirmBtn');
-    let submitted = false;
-    form.addEventListener('submit', function(e){
-        if (submitted) { e.preventDefault(); return false; }
-        submitted = true;
+    let locked = false;
+
+    function lock() {
+        locked = true;
         btn.disabled = true;
         btn.textContent = 'Saving...';
-        btn.style.opacity = '0.7';
+        btn.style.opacity = '0.6';
+        btn.style.pointerEvents = 'none';
+    }
+
+    // Block on mousedown (fires before click, before submit)
+    btn.addEventListener('mousedown', function(e) {
+        if (locked) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
+    });
+
+    // Block on touchstart for mobile
+    btn.addEventListener('touchstart', function(e) {
+        if (locked) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
+    }, { passive: false });
+
+    // Actual lock happens on form submit
+    form.addEventListener('submit', function(e) {
+        if (locked) { e.preventDefault(); return false; }
+        lock();
     });
 })();
 let targetVoidId=null;
