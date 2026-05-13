@@ -25,6 +25,7 @@ $active_count = $pdo->query("SELECT COUNT(*) FROM pcs WHERE status='active'")->f
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Q-Solutions | Counter</title>
+<link rel="icon" type="image/jpeg" href="q.jpg">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="includes/navbar.css">
 <script>(function(){if(localStorage.getItem("settings_theme")==="light"){document.documentElement.classList.add("light-mode");}})()</script>
@@ -338,13 +339,6 @@ body{
             <?php endforeach; ?>
         </div>
 
-        <!-- Confirm button — only appears after a package is selected -->
-        <button id="btnStartConfirm" class="btn-open-time"
-                style="display:none;margin-top:10px;background:#2ecc71;color:#1e293b;font-size:14px;"
-                onclick="confirmStart()">
-            <i class="fas fa-play-circle"></i> Start Session
-        </button>
-
         <span class="btn-cancel-link" onclick="closeStartModal()">Cancel</span>
     </div>
 </div>
@@ -468,36 +462,17 @@ function openStartModal(id, name) {
     currentPcId = id; currentPcName = name; selectedMins = null;
     document.getElementById('startModalTitle').textContent = 'Start ' + name;
     document.querySelectorAll('.pkg-btn,.btn-open-time').forEach(b => b.classList.remove('selected'));
-    document.getElementById('btnStartConfirm').style.display = 'none';
     document.getElementById('startModal').classList.add('show');
 }
-function closeStartModal() {
-    document.getElementById('startModal').classList.remove('show');
-    selectedMins = null;
-}
+function closeStartModal() { document.getElementById('startModal').classList.remove('show'); }
 
 function selectPkg(btn, mins) {
     selectedMins = mins;
-    // Just highlight — do NOT redirect yet
     document.querySelectorAll('.pkg-btn,.btn-open-time').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
-    // Show the confirm button
-    const confirmBtn = document.getElementById('btnStartConfirm');
-    confirmBtn.style.display = 'block';
-    confirmBtn._locked = false;
-    confirmBtn.disabled = false;
-    confirmBtn.textContent = '\u25B6 Start Session';
-    confirmBtn.style.opacity = '1';
-}
-
-function confirmStart() {
-    const confirmBtn = document.getElementById('btnStartConfirm');
-    if (confirmBtn._locked || selectedMins === null) return;
-    confirmBtn._locked = true;
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Starting...';
-    confirmBtn.style.opacity = '0.6';
-    window.location.href = 'start_session.php?id=' + currentPcId + '&mins=' + selectedMins;
+    setTimeout(() => {
+        window.location.href = 'start_session.php?id=' + currentPcId + '&mins=' + selectedMins;
+    }, 200);
 }
 
 function openEndModal(id, name) {
@@ -533,19 +508,18 @@ function confirmAddTime(mins) {
 }
 
 function endSessionNow(id, name) {
-    // Lock the confirm button immediately — prevent double tap
+    // Lock button to prevent double tap
     const confirmBtn = document.getElementById('confirmEndBtn');
     if (confirmBtn._locked) return;
     confirmBtn._locked = true;
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Ending...';
     confirmBtn.style.opacity = '0.6';
-    confirmBtn.style.pointerEvents = 'none';
 
-    // Close modal instantly
+    // Close modal
     closeEndModal();
 
-    // Grey out the card and stop the timer visually while waiting
+    // Grey out card while waiting
     const card  = document.getElementById('pc-card-' + id);
     const timer = document.getElementById('timer-' + id);
     const badge = document.getElementById('overtime-badge-' + id);
@@ -555,14 +529,10 @@ function endSessionNow(id, name) {
 
     showToast('Ending session for ' + name + '...', 'info');
 
-    // Wait for server to actually save, THEN reload so everything is accurate
+    // Wait for server to finish, THEN reload so the page reflects real DB state
     fetch('end_session.php?id=' + id)
-        .then(() => {
-            window.location.href = 'counter.php';
-        })
-        .catch(() => {
-            window.location.reload();
-        });
+        .then(() => { window.location.href = 'counter.php'; })
+        .catch(() => { window.location.reload(); });
 }
 
 function copyUrl() {
