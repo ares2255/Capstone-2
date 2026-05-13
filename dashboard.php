@@ -37,7 +37,6 @@ try {
                s.cost as price, s.end_time as date
         FROM sessions s JOIN pcs p ON p.id = s.pc_id
         WHERE DATE(s.end_time) = :d1
-           OR (s.end_time IS NULL AND DATE(s.start_time) = :d2)
         UNION ALL
         SELECT 'Print' as type, pj.id as trans_id,
                pj.type || ' print - ' || pj.pages::text || ' pages' as description,
@@ -46,7 +45,7 @@ try {
         WHERE DATE(pj.created_at) = :d3
         ORDER BY date DESC
     ");
-    $histQ->execute([':d1'=>$selected_date, ':d2'=>$selected_date, ':d3'=>$selected_date]);
+    $histQ->execute([':d1'=>$selected_date, ':d3'=>$selected_date]);
     $history   = $histQ->fetchAll();
     $row_count = count($history);
 
