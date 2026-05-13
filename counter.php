@@ -227,6 +227,8 @@ body{
 .end-modal-box h3{margin:0 0 8px;font-size:18px;color:#1e293b;}
 .end-modal-box p{color:#64748b;font-size:13px;margin-bottom:24px;}
 .modal-actions{display:flex;gap:10px;}
+.btn-add-time-switch{flex:1;background:#1e2a78;color:white;border:none;padding:12px;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px;transition:.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-add-time-switch:hover{background:#2d3eaa;}
 .btn-stay{flex:1;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;padding:12px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s;}
 .btn-stay:hover{background:#e2e8f0;}
 .btn-end-confirm{flex:1;background:var(--qs-navy);color:white;border:none;padding:12px;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px;transition:.2s;}
@@ -340,16 +342,42 @@ body{
     </div>
 </div>
 
-<!-- End Modal -->
+<!-- End / Overtime Modal -->
 <div id="endModal" class="modal-overlay">
     <div class="end-modal-box">
-        <i class="fas fa-stop-circle end-icon"></i>
-        <h3 id="endModalTitle">End Session?</h3>
-        <p>This will stop the session and calculate the final cost.</p>
+        <!-- Default: End Session view -->
+        <div id="endView">
+            <i class="fas fa-stop-circle end-icon"></i>
+            <h3 id="endModalTitle">End Session?</h3>
+            <p id="endModalSub">This will stop the session and calculate the final cost.</p>
+            <div class="modal-actions">
+                <button class="btn-stay" onclick="closeEndModal()">Cancel</button>
+                <button class="btn-add-time-switch" id="btnSwitchAddTime" onclick="showAddTimeView()" style="display:none">
+                    <i class="fas fa-plus-circle"></i> Add Time
+                </button>
+                <button class="btn-end-confirm" id="confirmEndBtn">End Session</button>
+            </div>
+        </div>
 
-        <div class="modal-actions">
-            <button class="btn-stay" onclick="closeEndModal()">Cancel</button>
-            <button class="btn-end-confirm" id="confirmEndBtn">End Session</button>
+        <!-- Add Time view -->
+        <div id="addTimeView" style="display:none">
+            <i class="fas fa-clock end-icon" style="color:#1e2a78"></i>
+            <h3 id="addTimeTitle">Add Time</h3>
+            <p>Select a package to extend the session.</p>
+            <div class="pkg-grid" id="addTimePkgGrid">
+                <?php foreach($packages as $pkg):
+                    $h = intdiv($pkg['minutes'], 60);
+                    $m = $pkg['minutes'] % 60;
+                    if($h > 0 && $m > 0)  $label = "{$h}HR {$m}MIN";
+                    elseif($h > 0)        $label = $h == 1 ? "1 HR" : "{$h} HRS";
+                    else                  $label = "{$m} MIN";
+                ?>
+                <button class="pkg-btn" onclick="confirmAddTime(<?= $pkg['minutes'] ?>)">
+                    <?= htmlspecialchars($label) ?> (&#8369;<?= number_format($pkg['price'],2) ?>)
+                </button>
+                <?php endforeach; ?>
+            </div>
+            <span class="btn-cancel-link" onclick="showEndView()" style="margin-top:12px;display:block">← Back</span>
         </div>
     </div>
 </div>
@@ -448,11 +476,35 @@ function selectPkg(btn, mins) {
 
 function openEndModal(id, name) {
     currentPcId = id; currentPcName = name;
+    const card = document.getElementById('pc-card-' + id);
+    const isOvertime = card && card.classList.contains('overtime');
+
     document.getElementById('endModalTitle').textContent = 'End session for ' + name + '?';
+    document.getElementById('endModalSub').textContent   = 'This will stop the session and calculate the final cost.';
     document.getElementById('confirmEndBtn').onclick = () => { window.location.href = 'end_session.php?id=' + id; };
+
+    // Show "Add Time" button only when PC is in overtime
+    document.getElementById('btnSwitchAddTime').style.display = isOvertime ? 'flex' : 'none';
+
+    showEndView();
     document.getElementById('endModal').classList.add('show');
 }
-function closeEndModal() { document.getElementById('endModal').classList.remove('show'); }
+function closeEndModal() {
+    document.getElementById('endModal').classList.remove('show');
+    showEndView();
+}
+function showAddTimeView() {
+    document.getElementById('endView').style.display    = 'none';
+    document.getElementById('addTimeView').style.display = 'block';
+    document.getElementById('addTimeTitle').textContent  = 'Add Time — ' + currentPcName;
+}
+function showEndView() {
+    document.getElementById('endView').style.display    = 'block';
+    document.getElementById('addTimeView').style.display = 'none';
+}
+function confirmAddTime(mins) {
+    window.location.href = 'add_time.php?id=' + currentPcId + '&mins=' + mins;
+}
 
 function copyUrl() {
     const url = window.location.origin + '/session_display.php?pc=' + encodeURIComponent(currentPcName);
