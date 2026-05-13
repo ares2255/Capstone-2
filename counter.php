@@ -27,8 +27,7 @@ $active_count = $pdo->query("SELECT COUNT(*) FROM pcs WHERE status='active'")->f
 <title>Q-Solutions | Counter</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="includes/navbar.css">
-<link rel="stylesheet" href="includes/theme.css">
-<script>(function(){if(localStorage.getItem("settings_theme")==="light")document.documentElement.classList.add("light-mode");})()</script>
+<script>(function(){if(localStorage.getItem("settings_theme")==="light"){document.documentElement.classList.add("light-mode");}})()</script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
