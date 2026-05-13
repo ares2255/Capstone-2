@@ -163,7 +163,7 @@ input{width:100%;padding:11px;background:rgba(255,255,255,.05);border:1px solid 
                     <span style="font-size:13px;color:#8aa0c5;">Calculated Price:</span>
                     <span class="price-text" id="display_total">₱0.00</span>
                 </div>
-                <button type="submit" class="confirm-btn">Confirm &amp; Save</button>
+                <button type="submit" class="confirm-btn" id="confirmBtn" onclick="return handleSubmit(this)">Confirm &amp; Save</button>
             </form>
         </div>
     </div>
@@ -206,6 +206,19 @@ function calculateTotal(){
     document.getElementById('display_total').innerText = '₱' + total.toFixed(2);
 }
 window.onload = calculateTotal;
+
+let _submitting = false;
+function handleSubmit(btn) {
+    if (_submitting) return false;
+    const pages = parseInt(document.getElementById('pages').value) || 0;
+    if (pages <= 0) return false;
+    _submitting = true;
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    btn.style.opacity = '0.7';
+    btn.style.cursor = 'not-allowed';
+    return true;
+}
 let targetVoidId=null;
 function voidPrint(id){targetVoidId=id;document.getElementById('voidModal').style.display='flex';document.getElementById('confirmVoidBtn').onclick=()=>{window.location.href='void_print.php?id='+targetVoidId;};}
 function closeVoidModal(){document.getElementById('voidModal').style.display='none';}
