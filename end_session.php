@@ -4,9 +4,20 @@ include "config/db.php";
 date_default_timezone_set('Asia/Manila');
 
 if (isset($_GET['id'])) {
-    $pc_id = intval($_GET['id']);
+    $pc_id    = intval($_GET['id']);
     $redirect = $_GET['redirect'] ?? null;
     $end_time = date("Y-m-d H:i:s");
+
+    // ── Duplicate prevention: check if PC is already available ──
+    $check = $pdo->prepare("SELECT status FROM pcs WHERE id = :id");
+    $check->execute([':id' => $pc_id]);
+    $pc = $check->fetch();
+
+    if (!$pc || $pc['status'] === 'available') {
+        // Already ended — ignore duplicate request
+        header("Location: counter.php");
+        exit();
+    }
 
     $rates    = $pdo->query("SELECT * FROM settings WHERE id = 1")->fetch();
     $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
@@ -20,8 +31,8 @@ if (isset($_GET['id'])) {
         $start_time = $row['start_time'];
         $time_limit = $row['time_limit'];
 
-        $start_dt = new DateTime($start_time);
-        $end_dt = new DateTime($end_time);
+        $start_dt      = new DateTime($start_time);
+        $end_dt        = new DateTime($end_time);
         $total_minutes = ($start_dt->diff($end_dt)->h * 60) + $start_dt->diff($end_dt)->i;
 
         $cost = 0;
@@ -31,17 +42,15 @@ if (isset($_GET['id'])) {
             if ($pkgRow) {
                 $cost = $pkgRow['price'];
             } else {
-                // Open time — charge by minute
                 $cost = max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
             }
         } else {
-            // Open time
             $cost = max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
         }
 
-        $pc = $pdo->prepare("SELECT name FROM pcs WHERE id = :id");
-        $pc->execute([':id' => $pc_id]);
-        $pc_name = $pc->fetch()['name'];
+        $pc_row = $pdo->prepare("SELECT name FROM pcs WHERE id = :id");
+        $pc_row->execute([':id' => $pc_id]);
+        $pc_name = $pc_row->fetch()['name'];
 
         $pdo->prepare("INSERT INTO transactions (type, description, amount, time) VALUES ('Session', :desc, :amt, :t)")
             ->execute([':desc' => $pc_name, ':amt' => $cost, ':t' => $end_time]);
@@ -52,7 +61,6 @@ if (isset($_GET['id'])) {
         $pdo->prepare("UPDATE pcs SET status = 'available' WHERE id = :id")
             ->execute([':id' => $pc_id]);
 
-        // If customer ended their own session, redirect back to session display
         if ($redirect) {
             header("Location: " . $redirect);
             exit();
