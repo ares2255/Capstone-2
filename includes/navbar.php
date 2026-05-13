@@ -92,13 +92,13 @@ html.light-mode .alert-success{background:rgba(22,163,74,.08)!important;color:#1
 </nav>
 
 <script>
-// ── Clock ──
+// ── Clock (no seconds) ──
 function updateTime(){
     const now=new Date();
-    let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+    let h=now.getHours(),m=now.getMinutes();
     const ampm=h>=12?'PM':'AM'; h=h%12||12;
     document.getElementById('navTime').textContent=
-        String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+' '+ampm;
+        String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+' '+ampm;
 }
 updateTime(); setInterval(updateTime,1000);
 
