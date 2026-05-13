@@ -120,10 +120,7 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
 <body style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;box-sizing:border-box;">
 <div style="width:100%;max-width:500px;animation:fadeIn .8s ease-out;">
     <div class="login-header">
-        <div class="logo-box">
-            <div class="logo-q">Q</div>
-            <div class="logo-solutions">SOLUTIONS</div>
-        </div>
+        <img src="logo.jpg" alt="Q Solutions" style="height:64px;width:auto;object-fit:contain;display:block;margin:0 auto 14px;">
         <h1>Q-<span>Solutions</span></h1>
         <p>Admin Control Panel</p>
     </div>
