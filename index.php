@@ -17,7 +17,8 @@ if(isset($_SESSION['admin_username'])){
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Q-Solutions | Welcome</title>
+    <link rel="icon" type="image/jpeg" href="q.jpg">
+<title>Q-Solutions | Welcome</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -175,7 +176,8 @@ if(isset($_SESSION['admin_username'])){
 <div class="login-wrapper">
     <div class="login-header">
         <div class="logo-box">
-            <img src="logo.jpg" alt="Q Solutions" style="height:64px;width:auto;object-fit:contain;display:block;margin:0 auto 14px;">
+            <div class="logo-q">Q</div>
+            <div class="logo-solutions">SOLUTIONS</div>
         </div>
         <h1>Q-<span>Solutions</span></h1>
         <p>Management &amp; Analytics Portal</p>
