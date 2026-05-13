@@ -176,8 +176,7 @@ if(isset($_SESSION['admin_username'])){
 <div class="login-wrapper">
     <div class="login-header">
         <div class="logo-box">
-            <div class="logo-q">Q</div>
-            <div class="logo-solutions">SOLUTIONS</div>
+            <img src="q.jpg" alt="Q-Solutions Logo" style="width:90px;height:90px;object-fit:cover;border-radius:16px;display:block;">
         </div>
         <h1>Q-<span>Solutions</span></h1>
         <p>Management &amp; Analytics Portal</p>
