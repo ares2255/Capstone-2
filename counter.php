@@ -75,7 +75,7 @@ body{
 .stat-info p{margin:2px 0 0;color:#8aa0c5;font-size:11px;text-transform:uppercase;letter-spacing:1px;}
 
 /* PC Grid */
-.pc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;}
+.pc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;}
 
 .pc-card{
     background:rgba(255,255,255,.04);
