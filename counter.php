@@ -338,6 +338,13 @@ body{
             <?php endforeach; ?>
         </div>
 
+        <!-- Confirm button — only appears after a package is selected -->
+        <button id="btnStartConfirm" class="btn-open-time"
+                style="display:none;margin-top:10px;background:#2ecc71;color:#1e293b;font-size:14px;"
+                onclick="confirmStart()">
+            <i class="fas fa-play-circle"></i> Start Session
+        </button>
+
         <span class="btn-cancel-link" onclick="closeStartModal()">Cancel</span>
     </div>
 </div>
@@ -461,20 +468,35 @@ function openStartModal(id, name) {
     currentPcId = id; currentPcName = name; selectedMins = null;
     document.getElementById('startModalTitle').textContent = 'Start ' + name;
     document.querySelectorAll('.pkg-btn,.btn-open-time').forEach(b => b.classList.remove('selected'));
+    document.getElementById('btnStartConfirm').style.display = 'none';
     document.getElementById('startModal').classList.add('show');
 }
-function closeStartModal() { document.getElementById('startModal').classList.remove('show'); }
+function closeStartModal() {
+    document.getElementById('startModal').classList.remove('show');
+    selectedMins = null;
+}
 
 function selectPkg(btn, mins) {
     selectedMins = mins;
-    // Lock all buttons immediately — prevent double tap
-    document.querySelectorAll('.pkg-btn,.btn-open-time').forEach(b => {
-        b.disabled = true;
-        b.style.opacity = '0.5';
-        b.style.pointerEvents = 'none';
-    });
+    // Just highlight — do NOT redirect yet
+    document.querySelectorAll('.pkg-btn,.btn-open-time').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
-    btn.style.opacity = '1';
+    // Show the confirm button
+    const confirmBtn = document.getElementById('btnStartConfirm');
+    confirmBtn.style.display = 'block';
+    confirmBtn._locked = false;
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = '\u25B6 Start Session';
+    confirmBtn.style.opacity = '1';
+}
+
+function confirmStart() {
+    const confirmBtn = document.getElementById('btnStartConfirm');
+    if (confirmBtn._locked || selectedMins === null) return;
+    confirmBtn._locked = true;
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Starting...';
+    confirmBtn.style.opacity = '0.6';
     window.location.href = 'start_session.php?id=' + currentPcId + '&mins=' + selectedMins;
 }
 
