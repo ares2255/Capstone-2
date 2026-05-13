@@ -11,9 +11,11 @@ $is_admin     = isset($_SESSION['admin_username']);
 $display_user = $is_admin ? $_SESSION['admin_username'] : $_SESSION['username'];
 $current_page = 'printing';
 
-$rates         = $pdo->query("SELECT bw_rate, color_rate FROM settings LIMIT 1")->fetch();
-$db_bw_rate    = $rates['bw_rate']    ?? 5.00;
-$db_color_rate = $rates['color_rate'] ?? 15.00;
+$rates              = $pdo->query("SELECT bw_rate, color_rate, short_bond_rate, long_bond_rate FROM settings LIMIT 1")->fetch();
+$db_bw_rate         = $rates['bw_rate']          ?? 2.00;
+$db_color_rate      = $rates['color_rate']        ?? 10.00;
+$db_short_bond_rate = $rates['short_bond_rate']   ?? 0.00;
+$db_long_bond_rate  = $rates['long_bond_rate']    ?? 0.00;
 
 $today       = date('Y-m-d');
 $view_date   = (isset($_GET['view_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['view_date']))
@@ -141,20 +143,27 @@ input{width:100%;padding:11px;background:rgba(255,255,255,.05);border:1px solid 
         </div>
         <div class="panel-card">
             <h3 style="color:#38bdf8;margin:0 0 6px;font-size:15px;"><i class="fas fa-plus-circle"></i> New Print Job</h3>
-            <form action="save_print.php" method="POST">
+            <form action="save_print.php" method="POST" id="printForm">
+                <input type="hidden" name="submit_token" id="submit_token" value="<?= bin2hex(random_bytes(16)) ?>">
                 <label>Paper Type</label>
                 <div class="toggle-row">
                     <button type="button" class="toggle-btn active" onclick="setType('BW',this)">B&amp;W</button>
                     <button type="button" class="toggle-btn" onclick="setType('Color',this)">Color</button>
                 </div>
                 <input type="hidden" name="print_type" id="print_type" value="BW">
+                <label>Paper Size</label>
+                <div class="toggle-row">
+                    <button type="button" class="toggle-btn active" onclick="setSize('Short',this)">Short Bond</button>
+                    <button type="button" class="toggle-btn" onclick="setSize('Long',this)">Long Bond</button>
+                </div>
+                <input type="hidden" name="paper_size" id="paper_size" value="Short">
                 <label>Number of Pages</label>
                 <input type="number" name="pages" id="pages" value="1" min="1" oninput="calculateTotal()">
                 <div class="price-preview">
                     <span style="font-size:13px;color:#8aa0c5;">Calculated Price:</span>
                     <span class="price-text" id="display_total">₱0.00</span>
                 </div>
-                <button type="submit" class="confirm-btn">Confirm &amp; Save</button>
+                <button type="submit" class="confirm-btn" id="confirmBtn">Confirm &amp; Save</button>
             </form>
         </div>
     </div>
@@ -171,11 +180,45 @@ input{width:100%;padding:11px;background:rgba(255,255,255,.05);border:1px solid 
     </div>
 </div>
 <script>
-let currentType='BW';
-const bwRate=<?= $db_bw_rate ?>,colorRate=<?= $db_color_rate ?>;
-function setType(type,btn){currentType=type;document.getElementById('print_type').value=type;document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');calculateTotal();}
-function calculateTotal(){const pages=document.getElementById('pages').value||0;document.getElementById('display_total').innerText='₱'+(pages*(currentType==='BW'?bwRate:colorRate)).toFixed(2);}
-window.onload=calculateTotal;
+let currentType='BW', currentSize='Short';
+const bwRate=<?= $db_bw_rate ?>, colorRate=<?= $db_color_rate ?>;
+const shortBondRate=<?= $db_short_bond_rate ?>, longBondRate=<?= $db_long_bond_rate ?>;
+
+function setType(type,btn){
+    currentType=type;
+    document.getElementById('print_type').value=type;
+    btn.closest('.toggle-row').querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    calculateTotal();
+}
+function setSize(size,btn){
+    currentSize=size;
+    document.getElementById('paper_size').value=size;
+    btn.closest('.toggle-row').querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    calculateTotal();
+}
+function calculateTotal(){
+    const pages = parseInt(document.getElementById('pages').value) || 0;
+    const printRate = currentType === 'BW' ? bwRate : colorRate;
+    const paperRate = currentSize === 'Short' ? shortBondRate : longBondRate;
+    document.getElementById('display_total').innerText = '₱' + (pages * (printRate + paperRate)).toFixed(2);
+}
+window.onload = calculateTotal;
+
+// Prevent double submission
+(function(){
+    const form = document.getElementById('printForm');
+    const btn  = document.getElementById('confirmBtn');
+    let locked = false;
+    form.addEventListener('submit', function(e){
+        if (locked) { e.preventDefault(); return false; }
+        locked = true;
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+        btn.style.opacity = '0.6';
+    });
+})();
 let targetVoidId=null;
 function voidPrint(id){targetVoidId=id;document.getElementById('voidModal').style.display='flex';document.getElementById('confirmVoidBtn').onclick=()=>{window.location.href='void_print.php?id='+targetVoidId;};}
 function closeVoidModal(){document.getElementById('voidModal').style.display='none';}
