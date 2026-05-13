@@ -7,6 +7,7 @@ if (isset($_SESSION['admin_username'])) { header("Location: dashboard.php"); exi
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/jpeg" href="q.jpg">
 <title>Q-Solutions | Login</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="css/style.css">
@@ -35,6 +36,7 @@ min-height:100vh;overflow-x:hidden;}
     margin:0 auto 40px;
     box-shadow:0 10px 40px rgba(0,0,0,0.35);
     border-bottom:8px solid #1e2a78;
+    animation:fadeIn .8s ease-out;
 }
 @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
@@ -89,16 +91,16 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
 .login-card a[href="register.php"]{color:#1e2a78;font-weight:700;}
 
 /* ── Modal ── */
-.modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:99999;align-items:center;justify-content:center;pointer-events:none;}
-.modal-bg.show{display:flex;pointer-events:all;}
-.modal-card{background:#ffffff;border:none;border-radius:18px;padding:32px;width:420px;max-width:94vw;border-bottom:6px solid #1e2a78;box-shadow:0 10px 40px rgba(0,0,0,.3);position:relative;z-index:100000;pointer-events:all;}
+.modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;}
+.modal-bg.show{display:flex;}
+.modal-card{background:#ffffff;border:none;border-radius:18px;padding:32px;width:420px;max-width:94vw;border-bottom:6px solid #1e2a78;box-shadow:0 10px 40px rgba(0,0,0,.3);position:relative;z-index:1;}
 .modal-card h3{margin:0 0 6px;color:#1e2a78;font-size:17px;display:flex;align-items:center;gap:8px;}
 .modal-card p{color:#64748b;font-size:.84rem;margin:0 0 18px;}
 .modal-input{width:100%;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b;border-radius:8px;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:12px;}
 .modal-input:focus{border-color:#1e2a78;}
 .modal-btn{width:100%;padding:12px;background:#1e2a78;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.9rem;}
 .modal-btn:hover{background:#2d3eaa;}
-.modal-cancel{display:block;text-align:center;margin-top:12px;color:#64748b;font-size:.83rem;cursor:pointer;text-decoration:underline;background:none;border:none;width:100%;padding:4px;}
+.modal-cancel{display:block;text-align:center;margin-top:12px;color:#64748b;font-size:.83rem;cursor:pointer;text-decoration:underline;background:none;border:none;width:100%;padding:4px;position:relative;z-index:2;}
 .modal-cancel:hover{color:#1e2a78;}
 .sending-state{text-align:center;padding:20px;color:#64748b;}
 .sending-state i{font-size:32px;color:#1e2a78;display:block;margin-bottom:12px;animation:spin 1s linear infinite;}
@@ -116,10 +118,11 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
 </style>
 </head>
 <body style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;box-sizing:border-box;">
-<div style="width:100%;max-width:500px;">
+<div style="width:100%;max-width:500px;animation:fadeIn .8s ease-out;">
     <div class="login-header">
         <div class="logo-box">
-            <img src="logo.jpg" alt="Q Solutions" style="height:64px;width:auto;object-fit:contain;display:block;margin:0 auto 14px;">
+            <div class="logo-q">Q</div>
+            <div class="logo-solutions">SOLUTIONS</div>
         </div>
         <h1>Q-<span>Solutions</span></h1>
         <p>Admin Control Panel</p>
@@ -457,8 +460,7 @@ function togglePass(id, btn) {
         icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
 }
-
-// direct OAuth redirect (most reliable)
+ — direct OAuth redirect (most reliable)
 const GOOGLE_CLIENT_ID    = '647107465413-18hemskapc88e4gil1a9g009qpli9074.apps.googleusercontent.com';
 const GOOGLE_REDIRECT_URI = 'https://capstone-2-production-c904.up.railway.app/google_callback.php';
 
