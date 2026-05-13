@@ -150,15 +150,4 @@ function checkOvertime(){
 
 checkOvertime();
 setInterval(checkOvertime, 10000);
-
-// ── Theme: apply saved preference on every page ──
-(function(){
-    const saved = localStorage.getItem('settings_theme') || 'dark';
-    if(saved === 'light'){
-        document.body.classList.add('light-mode');
-    } else {
-        document.body.classList.remove('light-mode');
-    }
-    document.documentElement.classList.remove('light-mode-pre');
-})();
 </script>
