@@ -537,27 +537,60 @@ function endSessionNow(id, name) {
     // Close modal
     closeEndModal();
 
-    // Grey out card while waiting
+    // ── Immediately update the UI — no page reload ──
     const card  = document.getElementById('pc-card-' + id);
     const timer = document.getElementById('timer-' + id);
     const badge = document.getElementById('overtime-badge-' + id);
-    if (timer) { timer.textContent = '⏳'; timer.className = 'pc-timer timer-avail'; }
-    if (badge) { badge.classList.remove('show'); }
-    if (card)  { card.style.opacity = '0.5'; card.style.pointerEvents = 'none'; }
 
-    showToast('Ending session for ' + name + '...', 'info');
+    // Reset card to available state right away
+    if (card) {
+        card.className = 'pc-card available';
+        card.dataset.action = 'start';
+        card.style.opacity = '';
+        card.style.pointerEvents = '';
+        card.innerHTML = `
+            <div class="pc-icon"><i class="fas fa-desktop"></i></div>
+            <div class="pc-name">${name}</div>
+            <div class="status-dot"><span class="dot dot-avail"></span><span class="text-avail">AVAILABLE</span></div>
+            <div class="pc-timer timer-avail">—</div>
+            <div class="action-hint"><i class="fas fa-hand-pointer"></i> Click to start</div>
+        `;
+    }
 
-    // Wait for server to finish, THEN reload so the page reflects real DB state
+    // Hide overtime bar immediately — no waiting for poll
+    const bar      = document.getElementById('overtimeBar');
+    const navBadge = document.getElementById('otNavBadge');
+    const navCount = document.getElementById('otNavCount');
+    if (bar)   { bar.classList.remove('show'); }
+    if (navBadge) { navBadge.style.display = 'none'; }
+    window._alarming = false;
+
+    // Update stat counters
+    const statActive = document.getElementById('stat-active');
+    if (statActive) {
+        const cur = parseInt(statActive.textContent) || 0;
+        if (cur > 0) statActive.textContent = cur - 1;
+    }
+
+    showToast('Session ended for ' + name, 'info');
+
+    // Call server in background — no redirect needed
     fetch('end_session.php?id=' + id)
         .then(() => {
-            // Hide overtime bar immediately so it doesn't flash on the reloaded page
-            const bar   = document.getElementById('overtimeBar');
-            const badge = document.getElementById('otNavBadge');
-            if (bar)   bar.classList.remove('show');
-            if (badge) badge.style.display = 'none';
-            window.location.href = 'counter.php';
+            // Refresh stats after server confirms
+            fetch('counter.php')
+                .then(r => r.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    ['stat-rev','stat-sessions','stat-active'].forEach(sid => {
+                        const el = document.getElementById(sid);
+                        const newEl = doc.getElementById(sid);
+                        if (el && newEl) el.textContent = newEl.textContent;
+                    });
+                });
         })
-        .catch(() => { window.location.reload(); });
+        .catch(() => {});
 }
 
 function copyUrl() {
