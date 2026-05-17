@@ -103,7 +103,7 @@ function updateTime(){
 updateTime(); setInterval(updateTime,1000);
 
 // ── Sound ──
-let _ctx=null, _alarming=false;
+let _ctx=null, _alarming=false, _beepTimer=null;
 let _muted = localStorage.getItem('ot_muted') === 'true';
 
 function _getCtx(){
@@ -122,7 +122,7 @@ function _beep(){
         g.gain.setValueAtTime(0.3,ctx.currentTime);
         g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
         o.start(); o.stop(ctx.currentTime+0.4);
-        setTimeout(_beep, 3000);
+        _beepTimer = setTimeout(_beep, 3000);
     }catch(e){}
 }
 
@@ -157,6 +157,16 @@ document.addEventListener('click', function(){
     if(_alarming && !_muted && _ctx && _ctx.state==='suspended') _ctx.resume();
 });
 
+// Fully kill alarm — called by counter.php when a session ends
+function stopAlarmNow(){
+    _alarming = false;
+    if(_beepTimer){ clearTimeout(_beepTimer); _beepTimer=null; }
+    const bar   = document.getElementById('overtimeBar');
+    const badge = document.getElementById('otNavBadge');
+    if(bar)   bar.classList.remove('show');
+    if(badge) badge.style.display='none';
+}
+
 // ── Overtime Checker ──
 function checkOvertime(){
     fetch('check_overtime.php?t='+Date.now())
@@ -180,6 +190,7 @@ function checkOvertime(){
             bar.classList.remove('show');
             badge.style.display='none';
             _alarming=false;
+            if(_beepTimer){ clearTimeout(_beepTimer); _beepTimer=null; }
         }
     })
     .catch(()=>{});
