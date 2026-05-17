@@ -3,20 +3,33 @@ session_start();
 include "config/db.php";
 date_default_timezone_set('Asia/Manila');
 
+// Detect fetch/AJAX call
+$isAjax = isset($_GET['ajax']) && $_GET['ajax'] == '1';
+
+function jsonOut($ok, $msg, $extra = []) {
+    header('Content-Type: application/json');
+    echo json_encode(array_merge(['ok' => $ok, 'msg' => $msg], $extra));
+    exit();
+}
+
 if (isset($_GET['id'])) {
     $pc_id    = intval($_GET['id']);
     $redirect = $_GET['redirect'] ?? null;
     $end_time = date("Y-m-d H:i:s");
 
-    // ── Duplicate prevention: check if PC is already available ──
     $check = $pdo->prepare("SELECT status FROM pcs WHERE id = :id");
     $check->execute([':id' => $pc_id]);
     $pc = $check->fetch();
 
-    if (!$pc || $pc['status'] === 'available') {
-        // Already ended — ignore duplicate request
-        header("Location: counter.php");
-        exit();
+    if (!$pc) {
+        if ($isAjax) jsonOut(false, 'PC not found');
+        header("Location: counter.php"); exit();
+    }
+
+    if ($pc['status'] === 'available') {
+        // Already ended
+        if ($isAjax) jsonOut(true, 'already_ended');
+        header("Location: counter.php"); exit();
     }
 
     $rates    = $pdo->query("SELECT * FROM settings WHERE id = 1")->fetch();
@@ -39,11 +52,7 @@ if (isset($_GET['id'])) {
         if ($time_limit) {
             $pkgQuery->execute([':m' => $time_limit]);
             $pkgRow = $pkgQuery->fetch();
-            if ($pkgRow) {
-                $cost = $pkgRow['price'];
-            } else {
-                $cost = max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
-            }
+            $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
         } else {
             $cost = max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
         }
@@ -61,14 +70,15 @@ if (isset($_GET['id'])) {
         $pdo->prepare("UPDATE pcs SET status = 'available' WHERE id = :id")
             ->execute([':id' => $pc_id]);
 
-        if ($redirect) {
-            header("Location: " . $redirect);
-            exit();
-        }
+        if ($isAjax) jsonOut(true, 'ended', ['pc_name' => $pc_name, 'cost' => $cost]);
 
-        header("Location: counter.php?status=ended&paid=$cost&pc=$pc_name");
-        exit();
+        if ($redirect) { header("Location: " . $redirect); exit(); }
+        header("Location: counter.php?status=ended&paid=$cost&pc=$pc_name"); exit();
     }
+
+    if ($isAjax) jsonOut(false, 'no_active_session');
 }
+
+if ($isAjax) jsonOut(false, 'no_id');
 header("Location: counter.php");
 ?>
