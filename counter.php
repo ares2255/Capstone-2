@@ -519,20 +519,15 @@ function endSessionNow(id, name) {
     const timer = document.getElementById('timer-' + id);
     const badge = document.getElementById('overtime-badge-' + id);
 
-    // Reset card to available state right away
+    // Reset card to available state — strip ALL overtime/active classes and inline styles
     if (card) {
+        // Remove all classes and re-apply only 'pc-card available'
         card.className = 'pc-card available';
         card.dataset.action = 'start';
-        card.style.opacity = '';
-        card.style.pointerEvents = '';
-        card.style.animation = 'none';
-        card.style.borderColor = '';
-        card.style.boxShadow = '';
-        // Force browser to flush the style, then remove inline overrides so CSS takes over
+        // Clear every inline style that could keep the red glow/animation alive
+        card.style.cssText = '';
+        // Force a reflow so the browser drops the animation frame
         void card.offsetWidth;
-        card.style.animation = '';
-        card.style.borderColor = '';
-        card.style.boxShadow = '';
         card.innerHTML = `
             <div class="pc-icon"><i class="fas fa-desktop"></i></div>
             <div class="pc-name">${name}</div>
@@ -542,12 +537,12 @@ function endSessionNow(id, name) {
         `;
     }
 
-    // Stop alarm immediately and re-check overtime from server
-    window._alarming = false;
-    if (typeof checkOvertime === 'function') {
-        // Give the server a moment to process end_session, then re-poll
-        setTimeout(checkOvertime, 800);
+    // Kill the alarm sound & bar immediately using navbar's dedicated function
+    if (typeof stopAlarmNow === 'function') {
+        stopAlarmNow();
     }
+    // Then re-poll server after a short delay to restore alarm if OTHER PCs are still overtime
+    setTimeout(function(){ if(typeof checkOvertime==='function') checkOvertime(); }, 1000);
 
     // Update stat counters
     const statActive = document.getElementById('stat-active');
