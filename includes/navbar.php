@@ -185,6 +185,6 @@ function checkOvertime(){
     .catch(()=>{});
 }
 
-setTimeout(checkOvertime, 300);
+checkOvertime();
 setInterval(checkOvertime, 10000);
 </script>
