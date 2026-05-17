@@ -373,7 +373,7 @@ body{
                     elseif($h > 0)        $label = $h == 1 ? "1 HR" : "{$h} HRS";
                     else                  $label = "{$m} MIN";
                 ?>
-                <button class="pkg-btn" onclick="confirmAddTime(<?= $pkg['minutes'] ?>)">
+                <button class="pkg-btn" onclick="confirmAddTime(<?= $pkg['minutes'] ?>, this)">
                     <?= htmlspecialchars($label) ?> (&#8369;<?= number_format($pkg['price'],2) ?>)
                 </button>
                 <?php endforeach; ?>
@@ -503,7 +503,12 @@ function showEndView() {
     document.getElementById('endView').style.display    = 'block';
     document.getElementById('addTimeView').style.display = 'none';
 }
-function confirmAddTime(mins) {
+function confirmAddTime(mins, btn) {
+    if (btn._locked) return;
+    btn._locked = true;
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.textContent = 'Adding...';
     window.location.href = 'add_time.php?id=' + currentPcId + '&mins=' + mins;
 }
 
