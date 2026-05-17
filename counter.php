@@ -548,6 +548,14 @@ function endSessionNow(id, name) {
         card.dataset.action = 'start';
         card.style.opacity = '';
         card.style.pointerEvents = '';
+        card.style.animation = 'none';
+        card.style.borderColor = '';
+        card.style.boxShadow = '';
+        // Force browser to flush the style, then remove inline overrides so CSS takes over
+        void card.offsetWidth;
+        card.style.animation = '';
+        card.style.borderColor = '';
+        card.style.boxShadow = '';
         card.innerHTML = `
             <div class="pc-icon"><i class="fas fa-desktop"></i></div>
             <div class="pc-name">${name}</div>
