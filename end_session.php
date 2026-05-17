@@ -21,8 +21,8 @@ $redirect = $_GET['redirect'] ?? null;
 $end_time = date("Y-m-d H:i:s");
 
 try {
-    // 1. Check PC exists and is active
-    $check = $pdo->prepare("SELECT status FROM pcs WHERE id = :id");
+    // 1. Check PC exists
+    $check = $pdo->prepare("SELECT status, name FROM pcs WHERE id = :id");
     $check->execute([':id' => $pc_id]);
     $pc = $check->fetch();
 
@@ -31,74 +31,61 @@ try {
         header("Location: counter.php"); exit();
     }
 
-    if ($pc['status'] === 'available') {
-        // Already ended — treat as success
+    $pc_name = $pc['name'];
+
+    // 2. Close ALL open sessions for this PC (fixes duplicate orphan buildup)
+    $openSessions = $pdo->prepare("SELECT id, start_time, time_limit FROM sessions WHERE pc_id = :pc AND end_time IS NULL ORDER BY id DESC");
+    $openSessions->execute([':pc' => $pc_id]);
+    $rows = $openSessions->fetchAll();
+
+    if (empty($rows) && $pc['status'] === 'available') {
+        // Nothing to do
         if ($isAjax) jsonOut(true, 'already_ended');
         header("Location: counter.php"); exit();
     }
 
-    // 2. Find the active session
-    $stmt = $pdo->prepare("SELECT id, start_time, time_limit FROM sessions WHERE pc_id = :pc AND end_time IS NULL ORDER BY id DESC LIMIT 1");
-    $stmt->execute([':pc' => $pc_id]);
-    $row = $stmt->fetch();
-
-    if (!$row) {
-        // No session row but PC marked active — fix the orphan
-        $pdo->prepare("UPDATE pcs SET status = 'available' WHERE id = :id")
-            ->execute([':id' => $pc_id]);
-        if ($isAjax) jsonOut(true, 'orphan_fixed');
-        header("Location: counter.php"); exit();
-    }
-
-    $session_id = $row['id'];
-    $start_time = $row['start_time'];
-    $time_limit = $row['time_limit'];
-
-    // 3. Calculate cost
+    // 3. Calculate cost from the most recent session only
     $cost = 0;
-    try {
-        $rates = $pdo->query("SELECT * FROM settings WHERE id = 1")->fetch();
-        $start_dt      = new DateTime($start_time);
-        $end_dt        = new DateTime($end_time);
-        $diff          = $start_dt->diff($end_dt);
-        $total_minutes = ($diff->h * 60) + $diff->i + ($diff->days * 24 * 60);
+    if (!empty($rows)) {
+        $row = $rows[0]; // most recent
+        try {
+            $rates = $pdo->query("SELECT * FROM settings WHERE id = 1")->fetch();
+            $start_dt      = new DateTime($row['start_time']);
+            $end_dt        = new DateTime($end_time);
+            $diff          = $start_dt->diff($end_dt);
+            $total_minutes = ($diff->days * 24 * 60) + ($diff->h * 60) + $diff->i;
 
-        if ($time_limit) {
-            $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
-            $pkgQuery->execute([':m' => $time_limit]);
-            $pkgRow = $pkgQuery->fetch();
-            $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
-        } else {
-            $cost = max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
+            if ($row['time_limit']) {
+                $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
+                $pkgQuery->execute([':m' => $row['time_limit']]);
+                $pkgRow = $pkgQuery->fetch();
+                $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
+            } else {
+                $cost = max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
+            }
+        } catch (Exception $e) {
+            $cost = 0;
         }
-    } catch (Exception $e) {
-        $cost = 0; // Cost calc failed — still end the session
+
+        // 4. Close ALL open sessions — most recent gets the cost, rest get 0
+        foreach ($rows as $i => $r) {
+            $sessionCost = ($i === 0) ? $cost : 0;
+            $pdo->prepare("UPDATE sessions SET end_time = :et, cost = :cost WHERE id = :id AND end_time IS NULL")
+                ->execute([':et' => $end_time, ':cost' => $sessionCost, ':id' => $r['id']]);
+        }
     }
 
-    // 4. Get PC name
-    $pc_name = 'PC-' . $pc_id;
-    try {
-        $pc_row = $pdo->prepare("SELECT name FROM pcs WHERE id = :id");
-        $pc_row->execute([':id' => $pc_id]);
-        $fetched = $pc_row->fetch();
-        if ($fetched) $pc_name = $fetched['name'];
-    } catch (Exception $e) {}
-
-    // 5. Update session end_time and cost — CRITICAL
-    $pdo->prepare("UPDATE sessions SET end_time = :et, cost = :cost WHERE id = :id")
-        ->execute([':et' => $end_time, ':cost' => $cost, ':id' => $session_id]);
-
-    // 6. Mark PC available — CRITICAL
+    // 5. Mark PC available — always runs
     $pdo->prepare("UPDATE pcs SET status = 'available' WHERE id = :id")
         ->execute([':id' => $pc_id]);
 
-    // 7. Log transaction — non-critical, wrapped separately
+    // 6. Log transaction — non-critical
     try {
-        $pdo->prepare("INSERT INTO transactions (type, description, amount, time) VALUES ('Session', :desc, :amt, :t)")
-            ->execute([':desc' => $pc_name, ':amt' => $cost, ':t' => $end_time]);
-    } catch (Exception $e) {
-        // Transaction log failed — session still ended, ignore
-    }
+        if ($cost > 0) {
+            $pdo->prepare("INSERT INTO transactions (type, description, amount, time) VALUES ('Session', :desc, :amt, :t)")
+                ->execute([':desc' => $pc_name, ':amt' => $cost, ':t' => $end_time]);
+        }
+    } catch (Exception $e) { /* ignore */ }
 
     if ($isAjax) jsonOut(true, 'ended', ['pc_name' => $pc_name, 'cost' => $cost]);
     if ($redirect) { header("Location: " . $redirect); exit(); }
