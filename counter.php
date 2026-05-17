@@ -618,8 +618,6 @@ function showToast(msg, type) {
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 4000);
 }
-
-setTimeout(() => location.reload(), 30000);
 </script>
 </body>
 </html>
