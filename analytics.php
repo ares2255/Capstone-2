@@ -43,13 +43,23 @@ try {
         ORDER BY day ASC
     ")->fetchAll();
 
-    // Last 6 months
+    // Only months with actual revenue
     $monthly = $pdo->query("
-        SELECT TO_CHAR(ms,'Mon YYYY') as month,
-               COALESCE((SELECT SUM(cost) FROM sessions WHERE DATE_TRUNC('month',end_time)=ms),0)+
-               COALESCE((SELECT SUM(price) FROM print_jobs WHERE DATE_TRUNC('month',created_at)=ms),0) as total
-        FROM generate_series(DATE_TRUNC('month',CURRENT_DATE-INTERVAL '5 months'), DATE_TRUNC('month',CURRENT_DATE),'1 month') ms
-        ORDER BY ms ASC
+        SELECT TO_CHAR(month, 'Mon YYYY') as month, SUM(total) as total
+        FROM (
+            SELECT DATE_TRUNC('month', end_time) as month, SUM(cost) as total
+            FROM sessions
+            WHERE end_time IS NOT NULL AND cost > 0
+            GROUP BY DATE_TRUNC('month', end_time)
+            UNION ALL
+            SELECT DATE_TRUNC('month', created_at) as month, SUM(price) as total
+            FROM print_jobs
+            WHERE price > 0
+            GROUP BY DATE_TRUNC('month', created_at)
+        ) combined
+        GROUP BY month
+        HAVING SUM(total) > 0
+        ORDER BY month ASC
     ")->fetchAll();
 
     // Top PCs
