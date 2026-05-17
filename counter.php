@@ -384,8 +384,6 @@ body{
 </div>
 
 <script>
-let alarmPlaying = false;
-let anyOvertime = false;
 let currentPcId = null;
 let currentPcName = null;
 let selectedMins = null;
@@ -422,7 +420,6 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
             if (card) { card.classList.add('overtime'); card.classList.remove('in-use'); }
             if (badge) badge.classList.add('show');
             if (statusDot) statusDot.innerHTML = '<span class="dot dot-over"></span><span class="text-over">OVERTIME</span>';
-            anyOvertime = true;
         } else if (limitMins) {
             const rem = (limitMins * 60) - elapsed;
             el.textContent = pad(Math.floor(rem/3600)) + ':' + pad(Math.floor((rem%3600)/60)) + ':' + pad(rem%60);
@@ -435,27 +432,7 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
     tick(); setInterval(tick, 1000);
 });
 
-// ── Alarm ──
-setInterval(() => {
-    if (anyOvertime) {
-        document.getElementById('globalAlarmBar').classList.add('show');
-        if (!alarmPlaying) {
-            alarmPlaying = true;
-            function beep() {
-                if (!alarmPlaying) return;
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const o = ctx.createOscillator(), g = ctx.createGain();
-                o.connect(g); g.connect(ctx.destination);
-                o.type = 'square'; o.frequency.value = 900;
-                g.gain.setValueAtTime(0.25, ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-                o.start(); o.stop(ctx.currentTime + 0.3);
-                setTimeout(beep, 2500);
-            }
-            beep();
-        }
-    }
-}, 1000);
+
 
 // ── Modal functions ──
 function openStartModal(id, name) {
@@ -565,13 +542,12 @@ function endSessionNow(id, name) {
         `;
     }
 
-    // Hide overtime bar immediately — no waiting for poll
-    const bar      = document.getElementById('overtimeBar');
-    const navBadge = document.getElementById('otNavBadge');
-    const navCount = document.getElementById('otNavCount');
-    if (bar)   { bar.classList.remove('show'); }
-    if (navBadge) { navBadge.style.display = 'none'; }
+    // Stop alarm immediately and re-check overtime from server
     window._alarming = false;
+    if (typeof checkOvertime === 'function') {
+        // Give the server a moment to process end_session, then re-poll
+        setTimeout(checkOvertime, 800);
+    }
 
     // Update stat counters
     const statActive = document.getElementById('stat-active');
