@@ -43,23 +43,23 @@ try {
         ORDER BY day ASC
     ")->fetchAll();
 
-    // Only months with actual revenue
-    $monthly = $pdo->query("
-        SELECT TO_CHAR(month, 'Mon YYYY') as month, SUM(total) as total
+    // Daily earnings — only days with actual revenue
+    $daily_revenue = $pdo->query("
+        SELECT day, SUM(total) as total
         FROM (
-            SELECT DATE_TRUNC('month', end_time) as month, SUM(cost) as total
+            SELECT DATE(end_time) as day, SUM(cost) as total
             FROM sessions
             WHERE end_time IS NOT NULL AND cost > 0
-            GROUP BY DATE_TRUNC('month', end_time)
+            GROUP BY DATE(end_time)
             UNION ALL
-            SELECT DATE_TRUNC('month', created_at) as month, SUM(price) as total
+            SELECT DATE(created_at) as day, SUM(price) as total
             FROM print_jobs
             WHERE price > 0
-            GROUP BY DATE_TRUNC('month', created_at)
+            GROUP BY DATE(created_at)
         ) combined
-        GROUP BY month
+        GROUP BY day
         HAVING SUM(total) > 0
-        ORDER BY month ASC
+        ORDER BY day ASC
     ")->fetchAll();
 
     // Top PCs
@@ -188,7 +188,7 @@ body{background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);colo
     <!-- Monthly Chart + Custom Date -->
     <div class="chart-grid-bottom">
         <div class="chart-card">
-            <h3><i class="fas fa-calendar-alt"></i> Monthly Revenue</h3>
+            <h3><i class="fas fa-chart-line"></i> Daily Revenue</h3>
             <canvas id="monthlyChart" height="160"></canvas>
         </div>
         <div class="chart-card">
@@ -225,59 +225,78 @@ new Chart(document.getElementById('weeklyChart'), {
 });
 
 // Monthly Chart
-new Chart(document.getElementById('monthlyChart'), {
-    type: 'bar',
-    data: {
-        labels: <?= json_encode(array_column($monthly,'month')) ?>,
-        datasets: [
-            {
-                type: 'bar',
-                label: 'Monthly Revenue',
-                data: <?= json_encode(array_map(fn($r)=>(float)$r['total'],$monthly)) ?>,
-                backgroundColor: 'rgba(46,204,113,0.25)',
-                borderColor: 'rgba(46,204,113,0.6)',
-                borderWidth: 1,
-                borderRadius: 6,
-                order: 2
-            },
-            {
-                type: 'line',
-                label: 'Trend',
-                data: <?= json_encode(array_map(fn($r)=>(float)$r['total'],$monthly)) ?>,
+(function(){
+    const rawDates = <?= json_encode(array_column($daily_revenue,'day')) ?>;
+    const rawTotals = <?= json_encode(array_map(fn($r)=>(float)$r['total'],$daily_revenue)) ?>;
+
+    // Format dates as "May 17" style for labels
+    const labels = rawDates.map(d => {
+        const dt = new Date(d + 'T00:00:00');
+        return dt.toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' });
+    });
+
+    new Chart(document.getElementById('monthlyChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Daily Revenue',
+                data: rawTotals,
                 borderColor: '#2ecc71',
-                backgroundColor: 'transparent',
+                backgroundColor: function(ctx) {
+                    const chart = ctx.chart;
+                    const {ctx: c, chartArea} = chart;
+                    if (!chartArea) return 'transparent';
+                    const gradient = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                    gradient.addColorStop(0, 'rgba(46,204,113,0.35)');
+                    gradient.addColorStop(1, 'rgba(46,204,113,0.01)');
+                    return gradient;
+                },
+                fill: true,
+                tension: 0.45,
                 borderWidth: 3,
-                tension: 0.4,
                 pointBackgroundColor: '#2ecc71',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
-                pointRadius: 6,
-                pointHoverRadius: 9,
-                order: 1
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { labels: { color: '#8aa0c5' } },
-            tooltip: {
-                callbacks: {
-                    label: ctx => ' ₱' + ctx.parsed.y.toLocaleString('en-PH', {minimumFractionDigits:2})
+                pointRadius: 5,
+                pointHoverRadius: 8,
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#2ecc71',
+                pointHoverBorderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { labels: { color: '#8aa0c5', usePointStyle: true } },
+                tooltip: {
+                    backgroundColor: 'rgba(13,17,23,0.92)',
+                    titleColor: '#fff',
+                    bodyColor: '#2ecc71',
+                    borderColor: 'rgba(46,204,113,0.4)',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        title: items => items[0].label,
+                        label: ctx => '  Revenue: ₱' + ctx.parsed.y.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})
+                    }
                 }
             },
-            datalabels: false
-        },
-        scales: {
-            x: { ticks: { color: '#8aa0c5' }, grid: { color: chartDefaults.grid } },
-            y: {
-                ticks: { color: '#8aa0c5', callback: v => '₱' + v.toLocaleString() },
-                grid: { color: chartDefaults.grid },
-                beginAtZero: true
+            scales: {
+                x: {
+                    ticks: { color: '#8aa0c5', maxRotation: 45, font: { size: 11 } },
+                    grid: { color: chartDefaults.grid }
+                },
+                y: {
+                    ticks: { color: '#8aa0c5', callback: v => '₱' + v.toLocaleString() },
+                    grid: { color: chartDefaults.grid },
+                    beginAtZero: true
+                }
             }
         }
-    }
-});
+    });
+})();
 
 // Top PCs Chart
 new Chart(document.getElementById('pcChart'), {
