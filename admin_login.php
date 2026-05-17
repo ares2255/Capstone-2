@@ -116,7 +116,8 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
 .step-badge{display:inline-flex;align-items:center;gap:6px;background:#eef2ff;color:#1e2a78;font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:12px;letter-spacing:.05em;text-transform:uppercase;}
 </style>
 </head>
-<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;box-sizing:border-box;">
+<body style="margin:0;min-height:100vh;padding:0;box-sizing:border-box;">
+<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;box-sizing:border-box;">
 <div style="width:100%;max-width:500px;">
     <div class="login-header">
         <img src="logo.jpg" alt="Q Solutions" style="height:64px;width:auto;object-fit:contain;display:block;margin:0 auto 14px;">
@@ -184,6 +185,7 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
             <a href="register.php" style="color:#1e2a78;text-decoration:none;font-size:.85rem;font-weight:bold;"> Register Here</a>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Forgot Password Modal -->
