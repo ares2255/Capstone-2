@@ -18,7 +18,7 @@ background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);
 min-height:100vh;overflow-x:hidden;}
 
 /* ── Header / logo ── */
-.login-header{text-align:center;margin-bottom:28px;animation:fadeIn .8s ease-out;}
+.login-header{text-align:center;margin-bottom:28px;}
 .login-header h1{font-size:2rem;color:white;font-weight:700;margin:10px 0 4px;letter-spacing:-.5px;}
 .login-header h1 span{color:#7b9cff;}
 .login-header p{color:#8aa0c5;font-size:1rem;margin:0;}
@@ -60,7 +60,7 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
 
 /* ── Login button ── */
 .login-btn{background:#1e2a78;border:none;color:white;padding:13px;width:100%;border-radius:10px;cursor:pointer;font-weight:700;transition:.3s;font-size:14px;margin-top:4px;letter-spacing:.3px;}
-.login-btn:hover{background:#2d3eaa;transform:translateY(-1px);box-shadow:0 4px 16px rgba(30,42,120,.3);}
+.login-btn:hover{background:#2d3eaa;box-shadow:0 4px 16px rgba(30,42,120,.3);}
 
 /* ── Password toggle ── */
 .pass-wrap{position:relative;display:flex;align-items:center;}
