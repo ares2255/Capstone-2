@@ -188,8 +188,8 @@ body{background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);colo
     <!-- Monthly Chart + Custom Date -->
     <div class="chart-grid-bottom">
         <div class="chart-card">
-            <h3><i class="fas fa-calendar-alt"></i> Monthly Revenue (Last 6 Months)</h3>
-            <canvas id="monthlyChart" height="130"></canvas>
+            <h3><i class="fas fa-calendar-alt"></i> Monthly Revenue</h3>
+            <canvas id="monthlyChart" height="160"></canvas>
         </div>
         <div class="chart-card">
             <h3><i class="fas fa-search"></i> Check Any Date</h3>
@@ -226,16 +226,57 @@ new Chart(document.getElementById('weeklyChart'), {
 
 // Monthly Chart
 new Chart(document.getElementById('monthlyChart'), {
-    type: 'line',
+    type: 'bar',
     data: {
         labels: <?= json_encode(array_column($monthly,'month')) ?>,
-        datasets: [{
-            label:'Monthly Revenue',
-            data:<?= json_encode(array_map(fn($r)=>(float)$r['total'],$monthly)) ?>,
-            borderColor:'#2ecc71',backgroundColor:'rgba(46,204,113,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#2ecc71'
-        }]
+        datasets: [
+            {
+                type: 'bar',
+                label: 'Monthly Revenue',
+                data: <?= json_encode(array_map(fn($r)=>(float)$r['total'],$monthly)) ?>,
+                backgroundColor: 'rgba(46,204,113,0.25)',
+                borderColor: 'rgba(46,204,113,0.6)',
+                borderWidth: 1,
+                borderRadius: 6,
+                order: 2
+            },
+            {
+                type: 'line',
+                label: 'Trend',
+                data: <?= json_encode(array_map(fn($r)=>(float)$r['total'],$monthly)) ?>,
+                borderColor: '#2ecc71',
+                backgroundColor: 'transparent',
+                borderWidth: 3,
+                tension: 0.4,
+                pointBackgroundColor: '#2ecc71',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 9,
+                order: 1
+            }
+        ]
     },
-    options:{responsive:true,plugins:{legend:{labels:{color:'#8aa0c5'}}},scales:{x:{ticks:{color:'#8aa0c5'},grid:{color:chartDefaults.grid}},y:{ticks:{color:'#8aa0c5',callback:v=>'₱'+v},grid:{color:chartDefaults.grid}}}}
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { labels: { color: '#8aa0c5' } },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ' ₱' + ctx.parsed.y.toLocaleString('en-PH', {minimumFractionDigits:2})
+                }
+            },
+            datalabels: false
+        },
+        scales: {
+            x: { ticks: { color: '#8aa0c5' }, grid: { color: chartDefaults.grid } },
+            y: {
+                ticks: { color: '#8aa0c5', callback: v => '₱' + v.toLocaleString() },
+                grid: { color: chartDefaults.grid },
+                beginAtZero: true
+            }
+        }
+    }
 });
 
 // Top PCs Chart
