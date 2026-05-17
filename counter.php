@@ -549,7 +549,14 @@ function endSessionNow(id, name) {
 
     // Wait for server to finish, THEN reload so the page reflects real DB state
     fetch('end_session.php?id=' + id)
-        .then(() => { window.location.href = 'counter.php'; })
+        .then(() => {
+            // Hide overtime bar immediately so it doesn't flash on the reloaded page
+            const bar   = document.getElementById('overtimeBar');
+            const badge = document.getElementById('otNavBadge');
+            if (bar)   bar.classList.remove('show');
+            if (badge) badge.style.display = 'none';
+            window.location.href = 'counter.php';
+        })
         .catch(() => { window.location.reload(); });
 }
 
