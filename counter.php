@@ -551,25 +551,37 @@ function endSessionNow(id, name) {
         if (cur > 0) statActive.textContent = cur - 1;
     }
 
-    showToast('Session ended for ' + name, 'info');
-
-    // Call server in background — no redirect needed
-    fetch('end_session.php?id=' + id)
-        .then(() => {
-            // Refresh stats after server confirms
-            fetch('counter.php')
-                .then(r => r.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    ['stat-rev','stat-sessions','stat-active'].forEach(sid => {
-                        const el = document.getElementById(sid);
-                        const newEl = doc.getElementById(sid);
-                        if (el && newEl) el.textContent = newEl.textContent;
-                    });
-                });
+    // Call server — use ?ajax=1 so it returns JSON we can actually check
+    fetch('end_session.php?id=' + id + '&ajax=1')
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                showToast('Session ended for ' + name, 'success');
+                // Refresh stat counters from server
+                fetch('counter.php')
+                    .then(r => r.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        ['stat-rev','stat-sessions','stat-active'].forEach(sid => {
+                            const el = document.getElementById(sid);
+                            const newEl = doc.getElementById(sid);
+                            if (el && newEl) el.textContent = newEl.textContent;
+                        });
+                    }).catch(() => {});
+                // Re-check overtime — clears alarm if no other PCs are overtime
+                setTimeout(function(){ if(typeof checkOvertime==='function') checkOvertime(); }, 500);
+            } else {
+                // Server failed — reload page so DB state is reflected correctly
+                showToast('Error ending session — reloading...', 'info');
+                setTimeout(() => window.location.reload(), 1200);
+            }
         })
-        .catch(() => {});
+        .catch(() => {
+            // Network error — reload so we don't show a wrong state
+            showToast('Connection error — reloading...', 'info');
+            setTimeout(() => window.location.reload(), 1200);
+        });
 }
 
 function copyUrl() {
