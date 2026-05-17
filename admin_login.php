@@ -18,7 +18,7 @@ background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);
 min-height:100vh;overflow-x:hidden;}
 
 /* ── Header / logo ── */
-.login-header{text-align:center;margin-bottom:28px;}
+.login-header{text-align:center;margin-bottom:28px;animation:fadeIn .8s ease-out;}
 .login-header h1{font-size:2rem;color:white;font-weight:700;margin:10px 0 4px;letter-spacing:-.5px;}
 .login-header h1 span{color:#7b9cff;}
 .login-header p{color:#8aa0c5;font-size:1rem;margin:0;}
@@ -36,7 +36,6 @@ min-height:100vh;overflow-x:hidden;}
     margin:0 auto 40px;
     box-shadow:0 10px 40px rgba(0,0,0,0.35);
     border-bottom:8px solid #1e2a78;
-    animation:fadeIn .8s ease-out;
 }
 @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
@@ -118,7 +117,7 @@ input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus
 </style>
 </head>
 <body style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;box-sizing:border-box;">
-<div style="width:100%;max-width:500px;animation:fadeIn .8s ease-out;">
+<div style="width:100%;max-width:500px;">
     <div class="login-header">
         <img src="logo.jpg" alt="Q Solutions" style="height:64px;width:auto;object-fit:contain;display:block;margin:0 auto 14px;">
         <h1>Q-<span>Solutions</span></h1>
