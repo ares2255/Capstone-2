@@ -458,7 +458,8 @@ function togglePass(id, btn) {
         icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
 }
- — direct OAuth redirect (most reliable)
+
+// — direct OAuth redirect (most reliable)
 const GOOGLE_CLIENT_ID    = '647107465413-18hemskapc88e4gil1a9g009qpli9074.apps.googleusercontent.com';
 const GOOGLE_REDIRECT_URI = 'https://capstone-2-production-c904.up.railway.app/google_callback.php';
 
