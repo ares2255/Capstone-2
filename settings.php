@@ -170,9 +170,10 @@ select option:disabled{color:#4a5f7a;}
                 <h3><i class="fas fa-tag"></i> Other Rates</h3>
                 <form action="save_all_rates.php" method="POST">
                     <div class="input-grid">
-                        <div class="input-group"><label>Min Charge (&#8369;)</label><input type="number" step="0.01" name="min_charge" value="<?= $rates['minimum_charge'] ?? '' ?>"></div>
+                        <div class="input-group"><label>Short Bond (&#8369;)</label><input type="number" step="0.01" name="short_bond_rate" value="<?= $rates['short_bond_rate'] ?? '' ?>"></div>
+                        <div class="input-group"><label>Long Bond (&#8369;)</label><input type="number" step="0.01" name="long_bond_rate" value="<?= $rates['long_bond_rate'] ?? '' ?>"></div>
                         <div class="input-group"><label>B&amp;W Print (&#8369;)</label><input type="number" step="0.01" name="bw_rate" value="<?= $rates['bw_rate'] ?? '' ?>"></div>
-                        <div class="input-group" style="grid-column:1/-1;"><label>Color Print (&#8369;)</label><input type="number" step="0.01" name="color_rate" value="<?= $rates['color_rate'] ?? '' ?>"></div>
+                        <div class="input-group"><label>Color Print (&#8369;)</label><input type="number" step="0.01" name="color_rate" value="<?= $rates['color_rate'] ?? '' ?>"></div>
                     </div>
                     <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Rates</button>
                 </form>
