@@ -466,11 +466,23 @@ function openStartModal(id, name) {
 }
 function closeStartModal() { document.getElementById('startModal').classList.remove('show'); }
 
+function _lockAllButtons() {
+    document.querySelectorAll('button, .btn-cancel-link').forEach(b => {
+        b.style.pointerEvents = 'none';
+        b.style.opacity = '0.5';
+    });
+}
+
 function selectPkg(btn, mins) {
+    if (btn._locked) return;
+    btn._locked = true;
     selectedMins = mins;
     document.querySelectorAll('.pkg-btn,.btn-open-time').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
+    btn.style.opacity = '0.6';
+    btn.textContent = 'Starting...';
     setTimeout(() => {
+        _lockAllButtons();
         window.location.href = 'start_session.php?id=' + currentPcId + '&mins=' + selectedMins;
     }, 200);
 }
@@ -509,6 +521,7 @@ function confirmAddTime(mins, btn) {
     btn.disabled = true;
     btn.style.opacity = '0.6';
     btn.textContent = 'Adding...';
+    _lockAllButtons();
     window.location.href = 'add_time.php?id=' + currentPcId + '&mins=' + mins;
 }
 
