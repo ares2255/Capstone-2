@@ -400,6 +400,8 @@ document.addEventListener('click', function(e) {
 });
 
 // ── Timers ──
+const _pcTimerIntervals = {}; // track interval IDs by pcId so we can cancel them
+
 document.querySelectorAll('[id^="timer-"]').forEach(el => {
     const raw = el.dataset.start;
     if (!raw) return;
@@ -408,18 +410,27 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
     const pcId = el.id.replace('timer-','');
     const card = document.getElementById('pc-card-' + pcId);
     const badge = document.getElementById('overtime-badge-' + pcId);
-    const statusDot = card ? card.querySelector('.status-dot') : null;
     const pad = n => String(n).padStart(2,'0');
 
     function tick() {
+        // If card no longer exists or was reset to 'available', stop this timer
+        const liveCard = document.getElementById('pc-card-' + pcId);
+        if (!liveCard || liveCard.dataset.action === 'start') {
+            clearInterval(_pcTimerIntervals[pcId]);
+            delete _pcTimerIntervals[pcId];
+            return;
+        }
+        const liveStatusDot = liveCard.querySelector('.status-dot');
+        const liveBadge = document.getElementById('overtime-badge-' + pcId);
+
         const elapsed = Math.floor((Date.now() - start) / 1000);
         if (limitMins && elapsed >= limitMins * 60) {
             const over = elapsed - (limitMins * 60);
             el.textContent = '+' + pad(Math.floor(over/3600)) + ':' + pad(Math.floor((over%3600)/60)) + ':' + pad(over%60);
             el.className = 'pc-timer timer-over';
-            if (card) { card.classList.add('overtime'); card.classList.remove('in-use'); }
-            if (badge) badge.classList.add('show');
-            if (statusDot) statusDot.innerHTML = '<span class="dot dot-over"></span><span class="text-over">OVERTIME</span>';
+            liveCard.classList.add('overtime'); liveCard.classList.remove('in-use');
+            if (liveBadge) liveBadge.classList.add('show');
+            if (liveStatusDot) liveStatusDot.innerHTML = '<span class="dot dot-over"></span><span class="text-over">OVERTIME</span>';
         } else if (limitMins) {
             const rem = (limitMins * 60) - elapsed;
             el.textContent = pad(Math.floor(rem/3600)) + ':' + pad(Math.floor((rem%3600)/60)) + ':' + pad(rem%60);
@@ -429,7 +440,8 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
             el.textContent = pad(Math.floor(elapsed/3600)) + ':' + pad(Math.floor((elapsed%3600)/60)) + ':' + pad(elapsed%60);
         }
     }
-    tick(); setInterval(tick, 1000);
+    tick();
+    _pcTimerIntervals[pcId] = setInterval(tick, 1000);
 });
 
 
@@ -518,6 +530,12 @@ function endSessionNow(id, name) {
     const card  = document.getElementById('pc-card-' + id);
     const timer = document.getElementById('timer-' + id);
     const badge = document.getElementById('overtime-badge-' + id);
+
+    // Cancel the countdown timer for this PC immediately
+    if (_pcTimerIntervals[id]) {
+        clearInterval(_pcTimerIntervals[id]);
+        delete _pcTimerIntervals[id];
+    }
 
     // Reset card to available state — strip ALL overtime/active classes and inline styles
     if (card) {
