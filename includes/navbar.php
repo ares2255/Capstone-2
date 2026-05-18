@@ -64,19 +64,19 @@ html.light-mode .alert-success{background:rgba(22,163,74,.08)!important;color:#1
         <img src="logo.jpg" alt="Q Solutions" class="nav-logo-img">
     </div>
     <div class="nav-links">
-        <a href="counter.php" class="<?= $current=='counter.php'?'active':'' ?>">
+        <a href="counter.php" class="<?= $current=='counter.php'?'active':'' ?>" onclick="navGo(event,'counter.php')">
             <i class="fas fa-list"></i> Counter
         </a>
-        <a href="printing.php" class="<?= $current=='printing.php'?'active':'' ?>">
+        <a href="printing.php" class="<?= $current=='printing.php'?'active':'' ?>" onclick="navGo(event,'printing.php')">
             <i class="fas fa-print"></i> Printing
         </a>
-        <a href="dashboard.php" class="<?= $current=='dashboard.php'?'active':'' ?>">
+        <a href="dashboard.php" class="<?= $current=='dashboard.php'?'active':'' ?>" onclick="navGo(event,'dashboard.php')">
             <i class="fas fa-chart-pie"></i> Dashboard
         </a>
-        <a href="settings.php" class="<?= $current=='settings.php'?'active':'' ?>">
+        <a href="settings.php" class="<?= $current=='settings.php'?'active':'' ?>" onclick="navGo(event,'settings.php')">
             <i class="fas fa-cog"></i> Settings
         </a>
-        <a href="analytics.php" class="<?= $current=='analytics.php'?'active':'' ?>" style="<?= $current=='analytics.php'?'':'color:#2ecc71;' ?>">
+        <a href="analytics.php" class="<?= $current=='analytics.php'?'active':'' ?>" style="<?= $current=='analytics.php'?'':'color:#2ecc71;' ?>" onclick="navGo(event,'analytics.php')">
             <i class="fas fa-chart-line"></i> Analytics
         </a>
     </div>
@@ -167,9 +167,20 @@ function stopAlarmNow(){
     if(badge) badge.style.display='none';
 }
 
+// ── Instant nav: cancel polling before navigating ──
+function navGo(e, url){
+    e.preventDefault();
+    if(typeof _otController !== 'undefined' && _otController) _otController.abort();
+    if(typeof _otInterval !== 'undefined') clearInterval(_otInterval);
+    window.location.href = url;
+}
+
 // ── Overtime Checker ──
+let _otController = null;
 function checkOvertime(){
-    fetch('check_overtime.php?t='+Date.now())
+    if(_otController) _otController.abort();
+    _otController = new AbortController();
+    fetch('check_overtime.php?t='+Date.now(), {signal: _otController.signal})
     .then(r=>r.json())
     .then(d=>{
         const bar  = document.getElementById('overtimeBar');
@@ -193,9 +204,9 @@ function checkOvertime(){
             if(_beepTimer){ clearTimeout(_beepTimer); _beepTimer=null; }
         }
     })
-    .catch(()=>{});
+    .catch(err=>{ if(err.name !== 'AbortError') console.warn(err); });
 }
 
 checkOvertime();
-setInterval(checkOvertime, 10000);
+let _otInterval = setInterval(checkOvertime, 10000);
 </script>
