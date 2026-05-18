@@ -103,7 +103,7 @@ select option:disabled{color:#4a5f7a;}
             </h3>
 
             <!-- Add form -->
-            <form action="save_package.php" method="POST">
+            <form action="save_package.php" method="POST" onsubmit="var b=this.querySelector('.btn-add');b.disabled=true;b.innerHTML='<i class="fas fa-spinner fa-spin"></i> Adding...';">
                 <input type="hidden" name="action" value="add">
                 <div class="pkg-add-row">
                     <div>
@@ -146,7 +146,7 @@ select option:disabled{color:#4a5f7a;}
                     <td class="pkg-mins"><?= $pkg['minutes'] ?> min</td>
                     <td class="pkg-price">&#8369;<?= number_format($pkg['price'], 2) ?></td>
                     <td>
-                        <form action="save_package.php" method="POST" style="margin:0;">
+                        <form action="save_package.php" method="POST" style="margin:0;" onsubmit="var b=this.querySelector('.btn-pkg-del');b.disabled=true;b.innerHTML='Removing...';">
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="id" value="<?= $pkg['id'] ?>">
                             <button type="submit" class="btn-pkg-del"><i class="fas fa-trash"></i> Remove</button>
