@@ -333,7 +333,7 @@ body{
                 $isLast = ($pkg === end($packages));
                 $style = $isLast ? "grid-column:1/-1;border-color:rgba(46,204,113,.4);color:#2ecc71;" : "";
             ?>
-            <button class="pkg-btn" style="<?= $style ?>" onclick="selectPkg(this,<?= $pkg['minutes'] ?>)">
+            <button class="pkg-btn" style="<?= $style ?>" onclick="selectPkg(this,<?= $pkg['minutes'] ?>,<?= $pkg['id'] ?>)">
                 <?= htmlspecialchars($label) ?> (&#8369;<?= number_format($pkg['price'],2) ?>)
             </button>
             <?php endforeach; ?>
@@ -462,7 +462,7 @@ function _lockAllButtons() {
     });
 }
 
-function selectPkg(btn, mins) {
+function selectPkg(btn, mins, pkgId) {
     if (btn._locked) return;
     btn._locked = true;
     selectedMins = mins;
@@ -472,7 +472,9 @@ function selectPkg(btn, mins) {
     btn.textContent = 'Starting...';
     setTimeout(() => {
         _lockAllButtons();
-        window.location.href = 'start_session.php?id=' + currentPcId + '&mins=' + selectedMins;
+        var url = 'start_session.php?id=' + currentPcId + '&mins=' + selectedMins;
+        if (pkgId) url += '&pkg_id=' + pkgId;
+        window.location.href = url;
     }, 200);
 }
 
