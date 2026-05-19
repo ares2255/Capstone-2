@@ -56,9 +56,18 @@ try {
             $total_minutes = ($diff->days * 24 * 60) + ($diff->h * 60) + $diff->i;
 
             if ($row['time_limit']) {
-                $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
-                $pkgQuery->execute([':m' => $row['time_limit']]);
-                $pkgRow = $pkgQuery->fetch();
+                // Try package_id first (most accurate), fall back to minutes match
+                $pkgRow = null;
+                if (!empty($row['package_id'])) {
+                    $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE id = :id LIMIT 1");
+                    $pkgQuery->execute([':id' => $row['package_id']]);
+                    $pkgRow = $pkgQuery->fetch();
+                }
+                if (!$pkgRow) {
+                    $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m ORDER BY id DESC LIMIT 1");
+                    $pkgQuery->execute([':m' => $row['time_limit']]);
+                    $pkgRow = $pkgQuery->fetch();
+                }
                 $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
             } else {
                 $cost = max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
