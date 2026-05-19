@@ -103,7 +103,7 @@ select option:disabled{color:#4a5f7a;}
             </h3>
 
             <!-- Add form -->
-            <form action="save_package.php" method="POST" onsubmit="var b=this.querySelector('.btn-add');b.disabled=true;b.innerHTML='<i class="fas fa-spinner fa-spin"></i> Adding...';">
+            <form action="save_package.php" method="POST" onsubmit="return submitPkg(this)">
                 <input type="hidden" name="action" value="add">
                 <div class="pkg-add-row">
                     <div>
@@ -232,6 +232,15 @@ select option:disabled{color:#4a5f7a;}
 </button>
 
 <script>
+var _pkgSubmitting = false;
+function submitPkg(form){
+    if(_pkgSubmitting) return false;
+    _pkgSubmitting = true;
+    var b = form.querySelector('.btn-add');
+    b.disabled = true;
+    b.textContent = 'Adding...';
+    return true;
+}
 function showClearModal(){document.getElementById('clearUnitsModal').style.display='flex';}
 function closeClearModal(){document.getElementById('clearUnitsModal').style.display='none';}
 function submitClearAll(){document.getElementById('clearAllForm').submit();}
