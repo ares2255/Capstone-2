@@ -282,16 +282,21 @@ body{
 
         // Pre-calculate cost for display using packages table
         $cost = 0;
+        $pkg_price = 0;
         if ($isActive && $timeLimit) {
             foreach($packages as $pkg) {
-                if((int)$pkg['minutes'] === (int)$timeLimit) { $cost = $pkg['price']; break; }
+                if((int)$pkg['minutes'] === (int)$timeLimit) { $cost = $pkg['price']; $pkg_price = $pkg['price']; break; }
             }
         }
     ?>
         <div class="pc-card <?= $isActive ? 'in-use' : 'available' ?>" id="pc-card-<?= $pc['id'] ?>"
              data-pc-id="<?= $pc['id'] ?>"
              data-pc-name="<?= htmlspecialchars($pc['name'], ENT_QUOTES) ?>"
-             data-action="<?= $isActive ? 'end' : 'start' ?>">
+             data-action="<?= $isActive ? 'end' : 'start' ?>"
+             data-hourly="<?= $r['hourly_rate'] ?? 15 ?>"
+             data-min-charge="<?= $r['minimum_charge'] ?? 5 ?>"
+             data-pkg-price="<?= $pkg_price ?>"
+             data-is-open="<?= ($isActive && !$timeLimit) ? '1' : '0' ?>">
 
             <div class="pc-icon"><i class="fas fa-desktop"></i></div>
             <div class="pc-name"><?= htmlspecialchars($pc['name']) ?></div>
@@ -301,9 +306,7 @@ body{
                 <div class="overtime-badge" id="overtime-badge-<?= $pc['id'] ?>">⚠ OVERTIME</div>
                 <div class="pc-timer timer-running" id="timer-<?= $pc['id'] ?>"
                      data-start="<?= $startTime ?>" data-limit="<?= $timeLimit ?>">--:--:--</div>
-                <?php if($cost > 0): ?>
-                <div class="cost-display">₱<?= number_format($cost,2) ?></div>
-                <?php endif; ?>
+                <div class="cost-display" id="cost-<?= $pc['id'] ?>">₱<?= number_format($cost, 2) ?></div>
                 <div class="action-hint"><i class="fas fa-hand-pointer"></i> Click to end session</div>
             <?php else: ?>
                 <div class="status-dot"><span class="dot dot-avail"></span><span class="text-avail">AVAILABLE</span></div>
@@ -422,8 +425,19 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
         }
         const liveStatusDot = liveCard.querySelector('.status-dot');
         const liveBadge = document.getElementById('overtime-badge-' + pcId);
+        const costEl = document.getElementById('cost-' + pcId);
 
         const elapsed = Math.floor((Date.now() - start) / 1000);
+
+        // Update live cost for open time sessions
+        if (costEl && liveCard.dataset.isOpen === '1') {
+            const hourly = parseFloat(liveCard.dataset.hourly || 15);
+            const minCharge = parseFloat(liveCard.dataset.minCharge || 5);
+            const elapsedMins = elapsed / 60;
+            const liveCost = Math.max(minCharge, (elapsedMins / 60) * hourly);
+            costEl.textContent = '₱' + liveCost.toFixed(2);
+        }
+
         if (limitMins && elapsed >= limitMins * 60) {
             const over = elapsed - (limitMins * 60);
             el.textContent = '+' + pad(Math.floor(over/3600)) + ':' + pad(Math.floor((over%3600)/60)) + ':' + pad(over%60);
