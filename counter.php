@@ -387,6 +387,7 @@ body{
 </div>
 
 <script>
+const _packages = <?= json_encode(array_map(fn($p) => ['minutes' => (int)$p['minutes'], 'price' => (float)$p['price']], $packages)) ?>;
 let currentPcId = null;
 let currentPcName = null;
 let selectedMins = null;
@@ -433,8 +434,21 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
         if (costEl && liveCard.dataset.isOpen === '1') {
             const hourly = parseFloat(liveCard.dataset.hourly || 15);
             const minCharge = parseFloat(liveCard.dataset.minCharge || 5);
-            const elapsedMins = elapsed / 60;
-            const liveCost = Math.max(minCharge, (elapsedMins / 60) * hourly);
+            const elapsedMins = Math.floor(elapsed / 60);
+            // Find matching package for elapsed minutes
+            const matchedPkg = _packages.find(p => p.minutes === elapsedMins);
+            let liveCost;
+            if (matchedPkg) {
+                liveCost = matchedPkg.price;
+            } else {
+                // Find the closest package below elapsed time
+                const lower = _packages.filter(p => p.minutes < elapsedMins);
+                if (lower.length > 0) {
+                    liveCost = lower[lower.length - 1].price;
+                } else {
+                    liveCost = Math.max(minCharge, (elapsedMins / 60) * hourly);
+                }
+            }
             costEl.textContent = '₱' + liveCost.toFixed(2);
         }
 
