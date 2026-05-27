@@ -324,7 +324,7 @@ body{
         <div class="modal-title" id="startModalTitle">Start Session</div>
         <div class="modal-sub">Select a time package or choose Open Time.</div>
 
-        <button class="btn-open-time" onclick="selectPkg(this,0)">OPEN TIME</button>
+        <button class="btn-open-time" data-orig-label="OPEN TIME" onclick="selectPkg(this,0)">OPEN TIME</button>
 
         <div class="pkg-grid">
             <?php foreach($packages as $pkg):
@@ -336,7 +336,7 @@ body{
                 $isLast = ($pkg === end($packages));
                 $style = $isLast ? "grid-column:1/-1;border-color:rgba(46,204,113,.4);color:#2ecc71;" : "";
             ?>
-            <button class="pkg-btn" style="<?= $style ?>" onclick="selectPkg(this,<?= $pkg['minutes'] ?>,<?= $pkg['id'] ?>)">
+            <button class="pkg-btn" style="<?= $style ?>" data-orig-label="<?= htmlspecialchars($label) ?> (₱<?= number_format($pkg['price'],2) ?>)" onclick="selectPkg(this,<?= $pkg['minutes'] ?>,<?= $pkg['id'] ?>)">
                 <?= htmlspecialchars($label) ?> (&#8369;<?= number_format($pkg['price'],2) ?>)
             </button>
             <?php endforeach; ?>
@@ -478,7 +478,16 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
 function openStartModal(id, name) {
     currentPcId = id; currentPcName = name; selectedMins = null;
     document.getElementById('startModalTitle').textContent = 'Start ' + name;
-    document.querySelectorAll('.pkg-btn,.btn-open-time').forEach(b => b.classList.remove('selected'));
+    // Reset ALL package buttons so no stuck "Starting..." from a previous session
+    document.querySelectorAll('.pkg-btn,.btn-open-time').forEach(b => {
+        b.classList.remove('selected');
+        b._locked = false;
+        b.disabled = false;
+        b.style.opacity = '';
+        b.style.pointerEvents = '';
+        // Restore original label from data-label attribute if available
+        if (b.dataset.origLabel) b.textContent = b.dataset.origLabel;
+    });
     document.getElementById('startModal').classList.add('show');
 }
 function closeStartModal() { document.getElementById('startModal').classList.remove('show'); }
