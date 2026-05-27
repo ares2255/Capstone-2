@@ -71,21 +71,33 @@ try {
                 }
                 $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
             } else {
-                // Open Time: match the package whose minutes = floor(elapsed_seconds / 60)
-                // BUT find the closest package that is <= elapsed seconds (not minutes)
-                // This matches exactly what the live counter shows on screen
-                // e.g. 129 seconds: counter shows 00:01:xx → charge 1-min package
-                // We use elapsed_seconds directly: find highest package where (minutes*60) <= elapsed_seconds
+                // Open Time: charge based on which minute mark was just passed
+                // e.g. 1:02 = passed 1-min mark → 1-min package
+                //      2:08 = passed 2-min mark → 2-min package
+                //      3:06 = passed 3-min mark → nearest package <= 3 min
+                $passed_min = max(1, (int)floor($total_seconds / 60));
+
+                // Exact match first, then highest package <= passed_min
                 $pkgQuery = $pdo->prepare("
                     SELECT price FROM packages
-                    WHERE (minutes * 60) <= :secs
-                    ORDER BY minutes DESC
+                    WHERE minutes = :m
                     LIMIT 1
                 ");
-                $pkgQuery->execute([':secs' => $total_seconds]);
+                $pkgQuery->execute([':m' => $passed_min]);
                 $pkgRow = $pkgQuery->fetch();
 
-                // Fallback: if elapsed < 60s, still charge 1-min package (minimum)
+                if (!$pkgRow) {
+                    $pkgQuery = $pdo->prepare("
+                        SELECT price FROM packages
+                        WHERE minutes <= :m
+                        ORDER BY minutes DESC
+                        LIMIT 1
+                    ");
+                    $pkgQuery->execute([':m' => $passed_min]);
+                    $pkgRow = $pkgQuery->fetch();
+                }
+
+                // Last fallback: smallest package
                 if (!$pkgRow) {
                     $pkgQuery = $pdo->prepare("SELECT price FROM packages ORDER BY minutes ASC LIMIT 1");
                     $pkgQuery->execute();
