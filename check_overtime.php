@@ -23,8 +23,11 @@ try {
     foreach ($rows as $row) {
         $start = strtotime($row['start_time']);
         if (!$start) continue;
+        $time_limit = (int)$row['time_limit'];
+        // Skip open-time sessions (time_limit 0 or null — extra safety guard)
+        if ($time_limit <= 0) continue;
         $elapsed_mins = ($now - $start) / 60;
-        if ($elapsed_mins > (float)$row['time_limit']) {
+        if ($elapsed_mins > $time_limit) {
             $names[] = $row['name'];
         }
     }
