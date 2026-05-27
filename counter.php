@@ -409,7 +409,7 @@ const _pcTimerIntervals = {}; // track interval IDs by pcId so we can cancel the
 document.querySelectorAll('[id^="timer-"]').forEach(el => {
     const raw = el.dataset.start;
     if (!raw) return;
-    const start = new Date(raw.replace(' ','T') + '+08:00'); // DB stores Manila time (UTC+8)
+    const start = new Date(raw.replace(' ','T')); // DB stores Manila time, browser local time is also Manila
     const limitMins = el.dataset.limit ? parseInt(el.dataset.limit) : null;
     const pcId = el.id.replace('timer-','');
     const card = document.getElementById('pc-card-' + pcId);
