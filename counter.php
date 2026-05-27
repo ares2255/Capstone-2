@@ -498,22 +498,92 @@ function selectPkg(btn, mins, pkgId) {
     btn.classList.add('selected');
     btn.style.opacity = '0.6';
     btn.textContent = 'Starting...';
-    // Capture exact click time in Manila time (UTC+8) before any redirect delay
-    const now = new Date();
-    const manilaOffset = 8 * 60; // UTC+8 in minutes
-    const manilaTime = new Date(now.getTime() + (manilaOffset - (-now.getTimezoneOffset())) * 60000);
-    const ts = manilaTime.getFullYear() + '-'
-        + String(manilaTime.getMonth()+1).padStart(2,'0') + '-'
-        + String(manilaTime.getDate()).padStart(2,'0') + ' '
-        + String(manilaTime.getHours()).padStart(2,'0') + ':'
-        + String(manilaTime.getMinutes()).padStart(2,'0') + ':'
-        + String(manilaTime.getSeconds()).padStart(2,'0');
-    setTimeout(() => {
-        _lockAllButtons();
-        var url = 'start_session.php?id=' + currentPcId + '&mins=' + selectedMins + '&ts=' + encodeURIComponent(ts);
-        if (pkgId) url += '&pkg_id=' + pkgId;
-        window.location.href = url;
-    }, 200);
+
+    // Capture exact Manila time at the moment of click
+    const clickTime = new Date();
+    const manilaOffset = 8 * 60;
+    const manilaTime = new Date(clickTime.getTime() + (manilaOffset + clickTime.getTimezoneOffset()) * 60000);
+    const pad = n => String(n).padStart(2,'0');
+    const ts = manilaTime.getFullYear() + '-' + pad(manilaTime.getMonth()+1) + '-' + pad(manilaTime.getDate())
+             + ' ' + pad(manilaTime.getHours()) + ':' + pad(manilaTime.getMinutes()) + ':' + pad(manilaTime.getSeconds());
+
+    var url = 'start_session.php?id=' + currentPcId + '&mins=' + mins + '&ts=' + encodeURIComponent(ts) + '&ajax=1';
+    if (pkgId) url += '&pkg_id=' + pkgId;
+
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                closeStartModal();
+                // Update the card instantly using the exact click timestamp
+                const pcId   = currentPcId;
+                const pcName = currentPcName;
+                const card   = document.getElementById('pc-card-' + pcId);
+                if (card) {
+                    card.className = 'pc-card in-use';
+                    card.dataset.action = 'end';
+                    card.dataset.isOpen = mins == 0 ? '1' : '0';
+                    card.innerHTML = `
+                        <div class="pc-icon"><i class="fas fa-desktop"></i></div>
+                        <div class="pc-name">${pcName}</div>
+                        <div class="status-dot"><span class="dot dot-active"></span><span class="text-active">ACTIVE</span></div>
+                        <div class="overtime-badge" id="overtime-badge-${pcId}">⚠ OVERTIME</div>
+                        <div class="pc-timer timer-running" id="timer-${pcId}" data-start="${ts}" data-limit="${mins > 0 ? mins : ''}">--:--:--</div>
+                        <div class="cost-display" id="cost-${pcId}">₱${data.price ? parseFloat(data.price).toFixed(2) : '0.00'}</div>
+                        <div class="action-hint"><i class="fas fa-hand-pointer"></i> Click to end session</div>
+                    `;
+                    // Start the countdown timer immediately
+                    const timerEl = document.getElementById('timer-' + pcId);
+                    const start = new Date(ts.replace(' ','T'));
+                    const limitMins = mins > 0 ? mins : null;
+                    const padT = n => String(n).padStart(2,'0');
+                    function tick() {
+                        const liveCard = document.getElementById('pc-card-' + pcId);
+                        if (!liveCard || liveCard.dataset.action === 'start') {
+                            clearInterval(_pcTimerIntervals[pcId]);
+                            delete _pcTimerIntervals[pcId];
+                            return;
+                        }
+                        const elapsed = Math.floor((Date.now() - start) / 1000);
+                        const el = document.getElementById('timer-' + pcId);
+                        if (!el) return;
+                        if (limitMins && elapsed >= limitMins * 60) {
+                            const over = elapsed - (limitMins * 60);
+                            el.textContent = '+' + padT(Math.floor(over/3600)) + ':' + padT(Math.floor((over%3600)/60)) + ':' + padT(over%60);
+                            el.className = 'pc-timer timer-over';
+                            liveCard.classList.add('overtime'); liveCard.classList.remove('in-use');
+                        } else if (limitMins) {
+                            const rem = (limitMins * 60) - elapsed;
+                            el.textContent = padT(Math.floor(rem/3600)) + ':' + padT(Math.floor((rem%3600)/60)) + ':' + padT(rem%60);
+                            const pct = rem / (limitMins * 60);
+                            el.className = pct <= 0.1 ? 'pc-timer timer-critical' : pct <= 0.25 ? 'pc-timer timer-warning' : 'pc-timer timer-running';
+                        } else {
+                            el.textContent = padT(Math.floor(elapsed/3600)) + ':' + padT(Math.floor((elapsed%3600)/60)) + ':' + padT(elapsed%60);
+                        }
+                    }
+                    if (_pcTimerIntervals[pcId]) clearInterval(_pcTimerIntervals[pcId]);
+                    _pcTimerIntervals[pcId] = setInterval(tick, 1000);
+                    tick();
+                }
+                // Update stat counters
+                const statActive = document.getElementById('stat-active');
+                if (statActive) statActive.textContent = (parseInt(statActive.textContent) || 0) + 1;
+                const statSessions = document.getElementById('stat-sessions');
+                if (statSessions) statSessions.textContent = (parseInt(statSessions.textContent) || 0) + 1;
+            } else {
+                showToast('Error starting session', 'error');
+                btn._locked = false;
+                btn.textContent = mins == 0 ? 'OPEN TIME' : btn.dataset.label || 'Start';
+                btn.style.opacity = '';
+            }
+        })
+        .catch(() => {
+            // Fallback to redirect if fetch fails
+            _lockAllButtons();
+            var fallback = 'start_session.php?id=' + currentPcId + '&mins=' + mins + '&ts=' + encodeURIComponent(ts);
+            if (pkgId) fallback += '&pkg_id=' + pkgId;
+            window.location.href = fallback;
+        });
 }
 
 function openEndModal(id, name) {
