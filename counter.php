@@ -438,20 +438,19 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
         if (costEl && isOpenTime) {
             const hourly = parseFloat(liveCard.dataset.hourly || 15);
             const minCharge = parseFloat(liveCard.dataset.minCharge || 5);
-            const elapsedMins = Math.floor(elapsed / 60);
-            // Find the best matching package: exact first, then highest package <= elapsed
+            // Which minute mark just passed? floor(elapsed/60), min 1
+            const passedMin = Math.max(1, Math.floor(elapsed / 60));
             let liveCost;
-            const exactPkg = _packages.find(p => p.minutes === elapsedMins);
+            const exactPkg = _packages.find(p => p.minutes === passedMin);
             if (exactPkg) {
                 liveCost = exactPkg.price;
             } else {
-                // Get highest package whose minutes <= elapsed
-                const lower = _packages.filter(p => p.minutes <= elapsedMins);
+                // No exact match - highest package below passedMin
+                const lower = _packages.filter(p => p.minutes < passedMin);
                 if (lower.length > 0) {
                     liveCost = lower[lower.length - 1].price;
                 } else {
-                    // Below smallest package — use minimum charge
-                    liveCost = minCharge;
+                    liveCost = _packages.length > 0 ? _packages[0].price : minCharge;
                 }
             }
             costEl.textContent = '₱' + liveCost.toFixed(2);
@@ -567,14 +566,14 @@ function selectPkg(btn, mins, pkgId) {
                         if (costEl2 && !limitMins) {
                             const hourly2 = parseFloat(liveCard.dataset.hourly || 15);
                             const minCharge2 = parseFloat(liveCard.dataset.minCharge || 5);
-                            const elapsedMins2 = Math.floor(elapsed / 60);
-                            const exactPkg2 = _packages.find(p => p.minutes === elapsedMins2);
+                            const passedMin2 = Math.max(1, Math.floor(elapsed / 60));
+                            const exactPkg2 = _packages.find(p => p.minutes === passedMin2);
                             let liveCost2;
                             if (exactPkg2) {
                                 liveCost2 = exactPkg2.price;
                             } else {
-                                const lower2 = _packages.filter(p => p.minutes <= elapsedMins2);
-                                liveCost2 = lower2.length > 0 ? lower2[lower2.length - 1].price : minCharge2;
+                                const lower2 = _packages.filter(p => p.minutes < passedMin2);
+                                liveCost2 = lower2.length > 0 ? lower2[lower2.length - 1].price : (_packages.length > 0 ? _packages[0].price : minCharge2);
                             }
                             costEl2.textContent = '₱' + liveCost2.toFixed(2);
                         }
