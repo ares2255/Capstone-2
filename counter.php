@@ -287,6 +287,9 @@ body{
             foreach($packages as $pkg) {
                 if((int)$pkg['minutes'] === (int)$timeLimit) { $cost = $pkg['price']; $pkg_price = $pkg['price']; break; }
             }
+        } elseif ($isActive && !$timeLimit) {
+            // Open Time: show minimum charge as starting displayed cost
+            $cost = (float)($r['minimum_charge'] ?? 0);
         }
     ?>
         <div class="pc-card <?= $isActive ? 'in-use' : 'available' ?>" id="pc-card-<?= $pc['id'] ?>"
