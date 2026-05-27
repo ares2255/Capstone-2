@@ -53,7 +53,8 @@ try {
             $start_dt      = new DateTime($row['start_time']);
             $end_dt        = new DateTime($end_time);
             $diff          = $start_dt->diff($end_dt);
-            $total_minutes = ($diff->days * 24 * 60) + ($diff->h * 60) + $diff->i;
+            $total_seconds = ($diff->days * 86400) + ($diff->h * 3600) + ($diff->i * 60) + $diff->s;
+            $total_minutes = (int)floor($total_seconds / 60); // floor: charge completed minutes only
 
             if ($row['time_limit']) {
                 // Try package_id first (most accurate), fall back to minutes match
