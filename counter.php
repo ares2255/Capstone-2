@@ -299,7 +299,7 @@ body{
              data-hourly="<?= $r['hourly_rate'] ?? 15 ?>"
              data-min-charge="<?= $r['minimum_charge'] ?? 5 ?>"
              data-pkg-price="<?= $pkg_price ?>"
-             data-is-open="<?= ($isActive && !$timeLimit) ? '1' : '0' ?>">
+             data-is-open="<?= ($isActive && (!$timeLimit || (int)$timeLimit === 0)) ? '1' : '0' ?>">
 
             <div class="pc-icon"><i class="fas fa-desktop"></i></div>
             <div class="pc-name"><?= htmlspecialchars($pc['name']) ?></div>
@@ -433,11 +433,8 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
 
         const elapsed = Math.floor((Date.now() - start) / 1000);
 
-        // Update live cost — open time sessions use package-based pricing
-        const isOpen = liveCard.dataset.isOpen === '1';
-        // Also treat sessions where time_limit is 0 or missing as open time (legacy rows)
-        const limitVal = liveCard.querySelector('[data-limit]') ? liveCard.querySelector('[data-limit]').dataset.limit : '';
-        const isOpenTime = isOpen || limitVal === '' || limitVal === '0';
+        // Update live cost — open time sessions only
+        const isOpenTime = liveCard.dataset.isOpen === '1';
         if (costEl && isOpenTime) {
             const hourly = parseFloat(liveCard.dataset.hourly || 15);
             const minCharge = parseFloat(liveCard.dataset.minCharge || 5);
