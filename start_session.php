@@ -24,7 +24,8 @@ if (isset($_GET['id'])) {
         exit();
     }
 
-    $time_limit = (isset($_GET['mins']) && is_numeric($_GET['mins'])) ? abs(intval($_GET['mins'])) : null;
+    $mins_raw   = (isset($_GET['mins']) && is_numeric($_GET['mins'])) ? abs(intval($_GET['mins'])) : 0;
+    $time_limit = ($mins_raw > 0) ? $mins_raw : null;   // 0 = Open Time → store NULL
     $pkg_id     = (isset($_GET['pkg_id']) && is_numeric($_GET['pkg_id'])) ? intval($_GET['pkg_id']) : null;
 
     // Use exact click timestamp from JS (Manila time), fallback to server time
@@ -47,6 +48,10 @@ if (isset($_GET['id'])) {
         $pr->execute([':id' => $pkg_id]);
         $row = $pr->fetch();
         if ($row) $price = $row['price'];
+    } elseif ($time_limit === null) {
+        // Open Time: show minimum charge as the starting display price
+        $settingsRow = $pdo->query("SELECT minimum_charge FROM settings WHERE id=1")->fetch();
+        $price = $settingsRow ? (float)$settingsRow['minimum_charge'] : 0;
     }
 
     if ($isAjax) jsonOut(true, ['price' => $price, 'start_time' => $start_time]);
