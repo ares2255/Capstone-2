@@ -122,11 +122,15 @@ try {
     $pdo->prepare("UPDATE pcs SET status = 'available' WHERE id = :id")
         ->execute([':id' => $pc_id]);
 
-    // 6. Log transaction — non-critical
+    // 6. Log transaction — sum ALL sessions for this PC today (handles add-time scenarios)
     try {
-        if ($cost > 0) {
+        $today = date('Y-m-d');
+        $sumQ = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE pc_id=:pc AND DATE(start_time)=:d AND end_time IS NOT NULL");
+        $sumQ->execute([':pc' => $pc_id, ':d' => $today]);
+        $total_cost = (float)$sumQ->fetchColumn();
+        if ($total_cost > 0) {
             $pdo->prepare("INSERT INTO transactions (type, description, amount, time) VALUES ('Session', :desc, :amt, :t)")
-                ->execute([':desc' => $pc_name, ':amt' => $cost, ':t' => $end_time]);
+                ->execute([':desc' => $pc_name, ':amt' => $total_cost, ':t' => $end_time]);
         }
     } catch (Exception $e) { /* ignore */ }
 
