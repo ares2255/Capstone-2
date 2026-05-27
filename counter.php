@@ -498,9 +498,19 @@ function selectPkg(btn, mins, pkgId) {
     btn.classList.add('selected');
     btn.style.opacity = '0.6';
     btn.textContent = 'Starting...';
+    // Capture exact click time in Manila time (UTC+8) before any redirect delay
+    const now = new Date();
+    const manilaOffset = 8 * 60; // UTC+8 in minutes
+    const manilaTime = new Date(now.getTime() + (manilaOffset - (-now.getTimezoneOffset())) * 60000);
+    const ts = manilaTime.getFullYear() + '-'
+        + String(manilaTime.getMonth()+1).padStart(2,'0') + '-'
+        + String(manilaTime.getDate()).padStart(2,'0') + ' '
+        + String(manilaTime.getHours()).padStart(2,'0') + ':'
+        + String(manilaTime.getMinutes()).padStart(2,'0') + ':'
+        + String(manilaTime.getSeconds()).padStart(2,'0');
     setTimeout(() => {
         _lockAllButtons();
-        var url = 'start_session.php?id=' + currentPcId + '&mins=' + selectedMins;
+        var url = 'start_session.php?id=' + currentPcId + '&mins=' + selectedMins + '&ts=' + encodeURIComponent(ts);
         if (pkgId) url += '&pkg_id=' + pkgId;
         window.location.href = url;
     }, 200);
