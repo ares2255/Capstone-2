@@ -551,10 +551,17 @@ function endSessionNow(id, name) {
     confirmBtn._locked = true;
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Ending...';
-    confirmBtn.style.opacity = '0.6';
 
     // Close modal
     closeEndModal();
+
+    // Unlock the button immediately after modal closes so OTHER PCs can end their sessions
+    setTimeout(() => {
+        confirmBtn._locked = false;
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'End Session';
+        confirmBtn.style.opacity = '';
+    }, 500);
 
     // ── Immediately update the UI — no page reload ──
     const card  = document.getElementById('pc-card-' + id);
