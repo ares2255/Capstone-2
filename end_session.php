@@ -71,13 +71,28 @@ try {
                 }
                 $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
             } else {
-                // Open Time (time_limit is NULL or 0): find the highest package whose minutes <= elapsed
-                // Use max(1, total_minutes) so a sub-1-min session still gets the 1-min package
-                $billing_minutes = max(1, $total_minutes);
-                $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes <= :m ORDER BY minutes DESC LIMIT 1");
-                $pkgQuery->execute([':m' => $billing_minutes]);
+                // Open Time: match the package whose minutes = floor(elapsed_seconds / 60)
+                // BUT find the closest package that is <= elapsed seconds (not minutes)
+                // This matches exactly what the live counter shows on screen
+                // e.g. 129 seconds: counter shows 00:01:xx → charge 1-min package
+                // We use elapsed_seconds directly: find highest package where (minutes*60) <= elapsed_seconds
+                $pkgQuery = $pdo->prepare("
+                    SELECT price FROM packages
+                    WHERE (minutes * 60) <= :secs
+                    ORDER BY minutes DESC
+                    LIMIT 1
+                ");
+                $pkgQuery->execute([':secs' => $total_seconds]);
                 $pkgRow = $pkgQuery->fetch();
-                $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($billing_minutes / 60) * ($rates['hourly_rate'] ?? 0));
+
+                // Fallback: if elapsed < 60s, still charge 1-min package (minimum)
+                if (!$pkgRow) {
+                    $pkgQuery = $pdo->prepare("SELECT price FROM packages ORDER BY minutes ASC LIMIT 1");
+                    $pkgQuery->execute();
+                    $pkgRow = $pkgQuery->fetch();
+                }
+
+                $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_seconds / 3600) * ($rates['hourly_rate'] ?? 0));
             }
         } catch (Exception $e) {
             $cost = 0;
