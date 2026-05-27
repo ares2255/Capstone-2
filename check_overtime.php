@@ -19,9 +19,10 @@ try {
         ORDER BY p.id, s.id DESC
     ");
     $rows = $stmt->fetchAll();
-    $now = time();
+    $now = time(); // UTC unix timestamp
     foreach ($rows as $row) {
-        $start = strtotime($row['start_time']);
+        // Append ' UTC' so strtotime parses the DB value as UTC, not local time
+        $start = strtotime($row['start_time'] . ' UTC');
         if (!$start) continue;
         $elapsed_mins = ($now - $start) / 60;
         if ($elapsed_mins > (float)$row['time_limit']) {
