@@ -18,7 +18,7 @@ if (!isset($_GET['id'])) {
 
 $pc_id    = intval($_GET['id']);
 $redirect = $_GET['redirect'] ?? null;
-$end_time = date("Y-m-d H:i:s");
+$end_time = gmdate("Y-m-d H:i:s"); // UTC to match start_time
 
 try {
     // 1. Check PC exists
