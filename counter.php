@@ -433,23 +433,28 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
 
         const elapsed = Math.floor((Date.now() - start) / 1000);
 
-        // Update live cost for open time sessions
-        if (costEl && liveCard.dataset.isOpen === '1') {
+        // Update live cost — open time sessions use package-based pricing
+        const isOpen = liveCard.dataset.isOpen === '1';
+        // Also treat sessions where time_limit is 0 or missing as open time (legacy rows)
+        const limitVal = liveCard.querySelector('[data-limit]') ? liveCard.querySelector('[data-limit]').dataset.limit : '';
+        const isOpenTime = isOpen || limitVal === '' || limitVal === '0';
+        if (costEl && isOpenTime) {
             const hourly = parseFloat(liveCard.dataset.hourly || 15);
             const minCharge = parseFloat(liveCard.dataset.minCharge || 5);
             const elapsedMins = Math.floor(elapsed / 60);
-            // Find matching package for elapsed minutes
-            const matchedPkg = _packages.find(p => p.minutes === elapsedMins);
+            // Find the best matching package: exact first, then highest package <= elapsed
             let liveCost;
-            if (matchedPkg) {
-                liveCost = matchedPkg.price;
+            const exactPkg = _packages.find(p => p.minutes === elapsedMins);
+            if (exactPkg) {
+                liveCost = exactPkg.price;
             } else {
-                // Find the closest package below elapsed time
-                const lower = _packages.filter(p => p.minutes < elapsedMins);
+                // Get highest package whose minutes <= elapsed
+                const lower = _packages.filter(p => p.minutes <= elapsedMins);
                 if (lower.length > 0) {
                     liveCost = lower[lower.length - 1].price;
                 } else {
-                    liveCost = Math.max(minCharge, (elapsedMins / 60) * hourly);
+                    // Below smallest package — use minimum charge
+                    liveCost = minCharge;
                 }
             }
             costEl.textContent = '₱' + liveCost.toFixed(2);
@@ -558,7 +563,25 @@ function selectPkg(btn, mins, pkgId) {
                         }
                         const elapsed = Math.floor((Date.now() - start) / 1000);
                         const el = document.getElementById('timer-' + pcId);
+                        const costEl2 = document.getElementById('cost-' + pcId);
                         if (!el) return;
+
+                        // Update live cost for open time sessions
+                        if (costEl2 && !limitMins) {
+                            const hourly2 = parseFloat(liveCard.dataset.hourly || 15);
+                            const minCharge2 = parseFloat(liveCard.dataset.minCharge || 5);
+                            const elapsedMins2 = Math.floor(elapsed / 60);
+                            const exactPkg2 = _packages.find(p => p.minutes === elapsedMins2);
+                            let liveCost2;
+                            if (exactPkg2) {
+                                liveCost2 = exactPkg2.price;
+                            } else {
+                                const lower2 = _packages.filter(p => p.minutes <= elapsedMins2);
+                                liveCost2 = lower2.length > 0 ? lower2[lower2.length - 1].price : minCharge2;
+                            }
+                            costEl2.textContent = '₱' + liveCost2.toFixed(2);
+                        }
+
                         if (limitMins && elapsed >= limitMins * 60) {
                             const over = elapsed - (limitMins * 60);
                             el.textContent = '+' + padT(Math.floor(over/3600)) + ':' + padT(Math.floor((over%3600)/60)) + ':' + padT(over%60);
