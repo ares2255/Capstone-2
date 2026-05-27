@@ -19,8 +19,7 @@ if (isset($_GET['id'])) {
 
     $time_limit = (isset($_GET['mins']) && is_numeric($_GET['mins'])) ? abs(intval($_GET['mins'])) : null;
     $pkg_id     = (isset($_GET['pkg_id']) && is_numeric($_GET['pkg_id'])) ? intval($_GET['pkg_id']) : null;
-    // Save start_time in UTC so the JS timer (which appends 'Z') reads it correctly
-    $start_time = gmdate("Y-m-d H:i:s");
+    $start_time = gmdate("Y-m-d H:i:s"); // save as UTC
 
     $pdo->prepare("UPDATE pcs SET status = 'active' WHERE id = :id")
         ->execute([':id' => $pc_id]);
