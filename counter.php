@@ -308,7 +308,7 @@ body{
                 <div class="status-dot"><span class="dot dot-active"></span><span class="text-active">ACTIVE</span></div>
                 <div class="overtime-badge" id="overtime-badge-<?= $pc['id'] ?>">⚠ OVERTIME</div>
                 <div class="pc-timer timer-running" id="timer-<?= $pc['id'] ?>"
-                     data-start="<?= $startTime ?>" data-limit="<?= $timeLimit ?>">--:--:--</div>
+                     data-start="<?= $startTime ?>" data-unixt="<?= $startTime ? (new DateTime($startTime, new DateTimeZone('Asia/Manila')))->getTimestamp() : '' ?>" data-limit="<?= $timeLimit ?>">--:--:--</div>
                 <div class="cost-display" id="cost-<?= $pc['id'] ?>">₱<?= number_format($cost, 2) ?></div>
                 <div class="action-hint"><i class="fas fa-hand-pointer"></i> Click to end session</div>
             <?php else: ?>
@@ -412,7 +412,8 @@ const _pcTimerIntervals = {}; // track interval IDs by pcId so we can cancel the
 document.querySelectorAll('[id^="timer-"]').forEach(el => {
     const raw = el.dataset.start;
     if (!raw) return;
-    const start = new Date(raw.replace(' ','T'));
+    const unixt = el.dataset.unixt;
+    const start = unixt ? new Date(parseInt(unixt) * 1000) : new Date(raw.replace(' ','T'));
     const limitMins = el.dataset.limit ? parseInt(el.dataset.limit) : null;
     const pcId = el.id.replace('timer-','');
     const card = document.getElementById('pc-card-' + pcId);
