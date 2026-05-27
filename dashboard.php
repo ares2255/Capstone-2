@@ -1,7 +1,7 @@
 <?php
 session_start();
 include "config/db.php";
-date_default_timezone_set('Asia/Manila');
+date_default_timezone_set('Asia/Manila'); // ensure date() returns Manila time
 
 if (!isset($_SESSION['admin_username']) && !isset($_SESSION['username'])) {
     header("Location: index.php"); exit();
