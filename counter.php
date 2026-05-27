@@ -542,13 +542,13 @@ function selectPkg(btn, mins, pkgId) {
                         <div class="pc-name">${pcName}</div>
                         <div class="status-dot"><span class="dot dot-active"></span><span class="text-active">ACTIVE</span></div>
                         <div class="overtime-badge" id="overtime-badge-${pcId}">⚠ OVERTIME</div>
-                        <div class="pc-timer timer-running" id="timer-${pcId}" data-start="${ts}" data-limit="${mins > 0 ? mins : ''}">--:--:--</div>
+                        <div class="pc-timer timer-running" id="timer-${pcId}" data-start="${ts}" data-unixt="${data.unixt || ''}" data-limit="${mins > 0 ? mins : ''}">--:--:--</div>
                         <div class="cost-display" id="cost-${pcId}">₱${data.price ? parseFloat(data.price).toFixed(2) : '0.00'}</div>
                         <div class="action-hint"><i class="fas fa-hand-pointer"></i> Click to end session</div>
                     `;
                     // Start the countdown timer immediately
                     const timerEl = document.getElementById('timer-' + pcId);
-                    const start = new Date(ts.replace(' ','T'));
+                    const start = data.unixt ? new Date(data.unixt * 1000) : new Date(ts.replace(' ','T'));
                     const limitMins = mins > 0 ? mins : null;
                     const padT = n => String(n).padStart(2,'0');
                     function tick() {
