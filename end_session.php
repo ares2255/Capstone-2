@@ -70,10 +70,10 @@ try {
                 }
                 $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
             } else {
-                // Open Time: find the package whose minutes matches total_minutes used, else hourly
+                // Open Time: find the highest package whose minutes <= total_minutes used
                 $pkgRow = null;
                 if ($total_minutes > 0) {
-                    $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
+                    $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes <= :m ORDER BY minutes DESC LIMIT 1");
                     $pkgQuery->execute([':m' => $total_minutes]);
                     $pkgRow = $pkgQuery->fetch();
                 }
