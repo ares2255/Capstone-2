@@ -56,7 +56,7 @@ try {
             $total_seconds = ($diff->days * 86400) + ($diff->h * 3600) + ($diff->i * 60) + $diff->s;
             $total_minutes = (int)floor($total_seconds / 60); // floor: charge completed minutes only
 
-            if ($row['time_limit']) {
+            if (!empty($row['time_limit']) && (int)$row['time_limit'] > 0) {
                 // Try package_id first (most accurate), fall back to minutes match
                 $pkgRow = null;
                 if (!empty($row['package_id'])) {
@@ -71,14 +71,13 @@ try {
                 }
                 $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
             } else {
-                // Open Time: find the highest package whose minutes <= total_minutes used
-                $pkgRow = null;
-                if ($total_minutes > 0) {
-                    $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes <= :m ORDER BY minutes DESC LIMIT 1");
-                    $pkgQuery->execute([':m' => $total_minutes]);
-                    $pkgRow = $pkgQuery->fetch();
-                }
-                $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
+                // Open Time (time_limit is NULL or 0): find the highest package whose minutes <= elapsed
+                // Use max(1, total_minutes) so a sub-1-min session still gets the 1-min package
+                $billing_minutes = max(1, $total_minutes);
+                $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes <= :m ORDER BY minutes DESC LIMIT 1");
+                $pkgQuery->execute([':m' => $billing_minutes]);
+                $pkgRow = $pkgQuery->fetch();
+                $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($billing_minutes / 60) * ($rates['hourly_rate'] ?? 0));
             }
         } catch (Exception $e) {
             $cost = 0;
