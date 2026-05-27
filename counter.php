@@ -1,5 +1,6 @@
 <?php
 session_start();
+date_default_timezone_set('Asia/Manila');
 error_reporting(0);
 ini_set('display_errors', 0);
 include "config/db.php";
@@ -16,8 +17,8 @@ $r     = $pdo->query("SELECT * FROM settings WHERE id=1")->fetch();
 $packages = $pdo->query("SELECT * FROM packages ORDER BY minutes ASC")->fetchAll();
 $today = date('Y-m-d');
 
-$rev        = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE DATE(start_time)=:d"); $rev->execute([':d'=>$today]); $rev = $rev->fetchColumn();
-$sess_count = $pdo->prepare("SELECT COUNT(*) FROM sessions WHERE DATE(start_time)=:d"); $sess_count->execute([':d'=>$today]); $sess_count = $sess_count->fetchColumn();
+$rev        = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE DATE(start_time AT TIME ZONE 'Asia/Manila')=:d"); $rev->execute([':d'=>$today]); $rev = $rev->fetchColumn();
+$sess_count = $pdo->prepare("SELECT COUNT(*) FROM sessions WHERE DATE(start_time AT TIME ZONE 'Asia/Manila')=:d"); $sess_count->execute([':d'=>$today]); $sess_count = $sess_count->fetchColumn();
 $active_count = $pdo->query("SELECT COUNT(*) FROM pcs WHERE status='active'")->fetchColumn();
 ?>
 <!DOCTYPE html>
