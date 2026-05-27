@@ -31,7 +31,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // ── Process the print job ──
     $type       = strtoupper($_POST['print_type']);
-    $paper_size = isset($_POST['paper_size']) ? ucfirst(strtolower($_POST['paper_size'])) : 'Short';
+    $paper_size_raw = isset($_POST['paper_size']) ? strtolower($_POST['paper_size']) : 'short';
+    // Abbreviated paper size to stay within the VARCHAR(10) DB column limit:
+    // COLOR-Short = 11 chars (overflow). Using "Shrt" keeps COLOR-Shrt = 10 chars (fits).
+    // BW-Shrt = 7, BW-Long = 7, COLOR-Long = 10 — all within limit.
+    $paper_size = (strpos($paper_size_raw, 'long') !== false) ? 'Long' : 'Shrt';
     $pages      = intval($_POST['pages']);
 
     if ($pages <= 0) { header("Location: printing.php?status=error"); exit(); }
