@@ -2,6 +2,9 @@
 session_start();
 include "config/db.php";
 
+// Set PHP timezone to Manila so date() calls match local time
+date_default_timezone_set('Asia/Manila');
+
 if (!isset($_SESSION['admin_username']) && !isset($_SESSION['username'])) {
     header("Location: index.php"); exit();
 }
@@ -17,18 +20,19 @@ $date_label    = $is_today ? "Today" : date('F j, Y', strtotime($selected_date))
 try {
     $active = $pdo->query("SELECT COUNT(*) FROM pcs WHERE status='active'")->fetchColumn();
 
-    $q = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE DATE(end_time)=:d");
+    // Use AT TIME ZONE 'Asia/Manila' so PostgreSQL compares dates in local time, not UTC
+    $q = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE DATE(end_time AT TIME ZONE 'Asia/Manila')=:d");
     $q->execute([':d'=>$selected_date]); $pc_revenue = $q->fetchColumn();
 
-    $q = $pdo->prepare("SELECT COALESCE(SUM(price),0) FROM print_jobs WHERE DATE(created_at)=:d");
+    $q = $pdo->prepare("SELECT COALESCE(SUM(price),0) FROM print_jobs WHERE DATE(created_at AT TIME ZONE 'Asia/Manila')=:d");
     $q->execute([':d'=>$selected_date]); $print_revenue = $q->fetchColumn();
 
     $total_combined_revenue = $pc_revenue + $print_revenue;
 
-    $q = $pdo->prepare("SELECT COUNT(*) FROM sessions WHERE DATE(start_time)=:d");
+    $q = $pdo->prepare("SELECT COUNT(*) FROM sessions WHERE DATE(start_time AT TIME ZONE 'Asia/Manila')=:d");
     $q->execute([':d'=>$selected_date]); $sessions = $q->fetchColumn();
 
-    $q = $pdo->prepare("SELECT COUNT(*) FROM print_jobs WHERE DATE(created_at)=:d");
+    $q = $pdo->prepare("SELECT COUNT(*) FROM print_jobs WHERE DATE(created_at AT TIME ZONE 'Asia/Manila')=:d");
     $q->execute([':d'=>$selected_date]); $prints = $q->fetchColumn();
 
     // PostgreSQL-compatible UNION query — no CONCAT with cast
@@ -36,13 +40,13 @@ try {
         SELECT 'Session' as type, s.id as trans_id, p.name as description,
                s.cost as price, s.end_time as date
         FROM sessions s JOIN pcs p ON p.id = s.pc_id
-        WHERE DATE(s.end_time) = :d1
+        WHERE DATE(s.end_time AT TIME ZONE 'Asia/Manila') = :d1
         UNION ALL
         SELECT 'Print' as type, pj.id as trans_id,
                pj.type || ' print - ' || pj.pages::text || ' pages' as description,
                pj.price, pj.created_at as date
         FROM print_jobs pj
-        WHERE DATE(pj.created_at) = :d3
+        WHERE DATE(pj.created_at AT TIME ZONE 'Asia/Manila') = :d3
         ORDER BY date DESC
     ");
     $histQ->execute([':d1'=>$selected_date, ':d3'=>$selected_date]);
