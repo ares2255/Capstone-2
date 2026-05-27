@@ -412,7 +412,7 @@ const _pcTimerIntervals = {}; // track interval IDs by pcId so we can cancel the
 document.querySelectorAll('[id^="timer-"]').forEach(el => {
     const raw = el.dataset.start;
     if (!raw) return;
-    const start = new Date(raw.replace(' ','T')); // DB stores Manila time, browser local time is also Manila
+    const start = new Date(raw.replace(' ','T') + '+08:00'); // force Manila timezone so elapsed is always correct
     const limitMins = el.dataset.limit ? parseInt(el.dataset.limit) : null;
     const pcId = el.id.replace('timer-','');
     const card = document.getElementById('pc-card-' + pcId);
@@ -547,7 +547,7 @@ function selectPkg(btn, mins, pkgId) {
                     `;
                     // Start the countdown timer immediately
                     const timerEl = document.getElementById('timer-' + pcId);
-                    const start = new Date(ts.replace(' ','T'));
+                    const start = new Date(ts.replace(' ','T') + '+08:00'); // force Manila timezone
                     const limitMins = mins > 0 ? mins : null;
                     const padT = n => String(n).padStart(2,'0');
                     function tick() {
