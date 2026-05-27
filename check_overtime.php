@@ -19,14 +19,14 @@ try {
         ORDER BY p.id, s.id DESC
     ");
     $rows = $stmt->fetchAll();
-    $now = time();
     foreach ($rows as $row) {
-        $start = strtotime($row['start_time']);
-        if (!$start) continue;
         $time_limit = (int)$row['time_limit'];
-        // Skip open-time sessions (time_limit 0 or null — extra safety guard)
         if ($time_limit <= 0) continue;
-        $elapsed_mins = ($now - $start) / 60;
+        // Parse start_time as Manila time explicitly to avoid UTC misread
+        $start_dt = new DateTime($row['start_time'], new DateTimeZone('Asia/Manila'));
+        $now_dt   = new DateTime('now', new DateTimeZone('Asia/Manila'));
+        $elapsed_secs = $now_dt->getTimestamp() - $start_dt->getTimestamp();
+        $elapsed_mins = $elapsed_secs / 60;
         if ($elapsed_mins > $time_limit) {
             $names[] = $row['name'];
         }
