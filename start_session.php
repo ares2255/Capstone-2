@@ -28,12 +28,8 @@ if (isset($_GET['id'])) {
     $time_limit = ($mins_raw > 0) ? $mins_raw : null;   // 0 = Open Time → store NULL
     $pkg_id     = (isset($_GET['pkg_id']) && is_numeric($_GET['pkg_id'])) ? intval($_GET['pkg_id']) : null;
 
-    // Use exact click timestamp from JS (Manila time), fallback to server time
-    if (!empty($_GET['ts']) && preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $_GET['ts'])) {
-        $start_time = $_GET['ts'];
-    } else {
-        $start_time = date("Y-m-d H:i:s");
-    }
+    // Always use server time — avoids browser clock drift/timezone issues
+    $start_time = date("Y-m-d H:i:s");
 
     $pdo->prepare("UPDATE pcs SET status = 'active' WHERE id = :id")
         ->execute([':id' => $pc_id]);
@@ -54,7 +50,7 @@ if (isset($_GET['id'])) {
         $price = $settingsRow ? (float)$settingsRow['minimum_charge'] : 0;
     }
 
-    if ($isAjax) jsonOut(true, ['price' => $price, 'start_time' => $start_time]);
+    if ($isAjax) jsonOut(true, ['price' => $price, 'start_time' => $start_time, 'unixt' => (new DateTime($start_time, new DateTimeZone('Asia/Manila')))->getTimestamp()]);
 
     header("Location: counter.php?status=started");
     exit();
