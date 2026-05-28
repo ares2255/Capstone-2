@@ -110,9 +110,15 @@ try {
             $cost = 0;
         }
 
-        // 4. Close ALL open sessions — most recent gets the cost, rest get 0
+        // 4. Close ALL open sessions — preserve existing cost if set (add-time chain), else use calculated cost
         foreach ($rows as $i => $r) {
-            $sessionCost = ($i === 0) ? $cost : 0;
+            if ($i === 0) {
+                // Only update cost if it is NULL (fresh session), preserve combined total if already set
+                $existingCost = ($r['cost'] !== null) ? (float)$r['cost'] : null;
+                $sessionCost = ($existingCost !== null && $existingCost > $cost) ? $existingCost : $cost;
+            } else {
+                $sessionCost = 0;
+            }
             $pdo->prepare("UPDATE sessions SET end_time = :et, cost = :cost WHERE id = :id AND end_time IS NULL")
                 ->execute([':et' => $end_time, ':cost' => $sessionCost, ':id' => $r['id']]);
         }
@@ -122,13 +128,16 @@ try {
     $pdo->prepare("UPDATE pcs SET status = 'available' WHERE id = :id")
         ->execute([':id' => $pc_id]);
 
-    // 6. Log transaction — sum ALL sessions for this PC today (handles add-time scenarios)
+    // 6. Log transaction — sum ALL sessions for this PC today, replace any previous entry
     try {
         $today = date('Y-m-d');
         $sumQ = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE pc_id=:pc AND DATE(start_time)=:d AND end_time IS NOT NULL");
         $sumQ->execute([':pc' => $pc_id, ':d' => $today]);
         $total_cost = (float)$sumQ->fetchColumn();
         if ($total_cost > 0) {
+            // Remove previous transactions for this PC today, log one final total
+            $pdo->prepare("DELETE FROM transactions WHERE description=:desc AND DATE(time)=:d AND type='Session'")
+                ->execute([':desc' => $pc_name, ':d' => $today]);
             $pdo->prepare("INSERT INTO transactions (type, description, amount, time) VALUES ('Session', :desc, :amt, :t)")
                 ->execute([':desc' => $pc_name, ':amt' => $total_cost, ':t' => $end_time]);
         }
