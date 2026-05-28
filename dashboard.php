@@ -35,13 +35,13 @@ try {
     // PostgreSQL-compatible UNION query — no CONCAT with cast
     $histQ = $pdo->prepare("
         SELECT 'Session' as type, s.id as trans_id, p.name as description,
-               s.cost as price, s.end_time as date
+               s.cost as price, s.end_time as date, s.start_time, s.end_time as end_time_raw
         FROM sessions s JOIN pcs p ON p.id = s.pc_id
         WHERE DATE(s.end_time) = :d1
         UNION ALL
         SELECT 'Print' as type, pj.id as trans_id,
                pj.type || ' print - ' || pj.pages::text || ' pages' as description,
-               pj.price, pj.created_at as date
+               pj.price, pj.created_at as date, NULL as start_time, NULL as end_time_raw
         FROM print_jobs pj
         WHERE DATE(pj.created_at) = :d3
         ORDER BY date DESC
@@ -156,13 +156,25 @@ td:last-child,th:last-child{width:60px;text-align:center;}
             <div class="no-records"><i class="fas fa-folder-open"></i><br>No transactions found for <?= $date_label ?>.</div>
         <?php else: ?>
         <table>
-            <thead><tr><th>TYPE</th><th>DESCRIPTION</th><th>AMOUNT</th><th>TIME</th><th>DEL</th></tr></thead>
+            <thead><tr><th>TYPE</th><th>DESCRIPTION</th><th>AMOUNT</th><th>DURATION</th><th>TIME</th><th>DEL</th></tr></thead>
             <tbody>
-            <?php foreach($history as $row): ?>
+            <?php foreach($history as $row):
+                $duration_str = '—';
+                if ($row['type'] === 'Session' && !empty($row['start_time']) && !empty($row['end_time_raw'])) {
+                    $diff = (new DateTime($row['end_time_raw']))->getTimestamp() - (new DateTime($row['start_time']))->getTimestamp();
+                    $hrs  = intdiv($diff, 3600);
+                    $mins = intdiv($diff % 3600, 60);
+                    $secs = $diff % 60;
+                    if ($hrs > 0)      $duration_str = $hrs . 'h ' . $mins . 'm';
+                    elseif ($mins > 0) $duration_str = $mins . 'm ' . $secs . 's';
+                    else               $duration_str = $secs . 's';
+                }
+            ?>
             <tr>
                 <td><span style="border:1px solid currentColor;padding:3px 9px;border-radius:6px;font-size:11px;color:<?= $row['type']==='Session'?'#38bdf8':'#a855f7' ?>;"><?= $row['type'] ?></span></td>
                 <td><?= htmlspecialchars($row['description']) ?></td>
                 <td style="color:#2ecc71;font-weight:bold;font-family:monospace;font-size:16px;">₱<?= number_format((float)($row['price'] ?? 0),2) ?></td>
+                <td style="color:#f1c40f;font-size:13px;font-weight:600;"><?= $duration_str ?></td>
                 <td style="color:#8aa0c5;font-size:13px;"><?= $row['date'] ? date('g:i A',strtotime($row['date'])) : '<span style="color:#ff4d4d">Active</span>' ?></td>
                 <td style="text-align:center;">
                     <?php if($row['date']): ?>
