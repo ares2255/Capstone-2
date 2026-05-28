@@ -25,15 +25,13 @@ if (isset($_GET['id']) && isset($_GET['mins'])) {
         $pkgR = $pkgQ->fetch();
         $current_cost = $pkgR ? (float)$pkgR['price'] : 0;
 
-        // 2. Previous combined total stored in current session cost
-        // If current session cost > its own package price, it already has combined total
-        $prev_combined = ($row['cost'] > $current_cost) ? (float)$row['cost'] - $current_cost : 0;
-        // If cost equals package price, this is first add-time - prev_combined = current_cost
-        if ($prev_combined == 0 && (float)$row['cost'] == $current_cost) {
-            $prev_combined = $current_cost;
-        }
+        // 2. Get the running chain total
+        // If session cost is NULL = fresh session, chain total = just its package price
+        // If session cost is set = already a combined total from previous add-time
+        $session_cost = ($row['cost'] !== null) ? (float)$row['cost'] : $current_cost;
+        $prev_combined = $session_cost; // this is the total so far including current session
 
-        // 3. End the current session
+        // 3. End the current session with its own package cost only
         $pdo->prepare("UPDATE sessions SET end_time=:et, cost=:c WHERE id=:id AND end_time IS NULL")
             ->execute([':et' => $now, ':c' => $current_cost, ':id' => $row['id']]);
 
@@ -44,7 +42,7 @@ if (isset($_GET['id']) && isset($_GET['mins'])) {
         $new_cost   = $pkgR2 ? (float)$pkgR2['price'] : 0;
         $new_pkg_id = $pkgR2 ? (int)$pkgR2['id'] : null;
 
-        // 5. Combined total = previous chain total + new package
+        // 5. Combined total = running chain total + new package
         $total_cost = $prev_combined + $new_cost;
 
         // 6. Start new session with combined total as cost
