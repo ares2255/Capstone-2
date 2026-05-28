@@ -283,27 +283,6 @@ body{
 
 
 
-        // Pre-calculate initial timer display (server-side) so it renders instantly with no flash
-        $initialTimer = '';
-        if ($isActive && $startTime) {
-            $now_ts   = time();
-            $start_ts = (new DateTime($startTime, new DateTimeZone('Asia/Manila')))->getTimestamp();
-            $elapsed  = max(0, $now_ts - $start_ts);
-            $p = fn($n) => str_pad((int)$n, 2, '0', STR_PAD_LEFT);
-            if ($timeLimit && (int)$timeLimit > 0) {
-                $total_secs = (int)$timeLimit * 60;
-                if ($elapsed >= $total_secs) {
-                    $over = $elapsed - $total_secs;
-                    $initialTimer = '+' . $p(floor($over/3600)) . ':' . $p(floor(($over%3600)/60)) . ':' . $p($over%60);
-                } else {
-                    $rem = $total_secs - $elapsed;
-                    $initialTimer = $p(floor($rem/3600)) . ':' . $p(floor(($rem%3600)/60)) . ':' . $p($rem%60);
-                }
-            } else {
-                $initialTimer = $p(floor($elapsed/3600)) . ':' . $p(floor(($elapsed%3600)/60)) . ':' . $p($elapsed%60);
-            }
-        }
-
         // Pre-calculate cost for display using packages table
         $cost = 0;
         $pkg_price = 0;
@@ -339,7 +318,7 @@ body{
                 <div class="status-dot"><span class="dot dot-active"></span><span class="text-active">ACTIVE</span></div>
                 <div class="overtime-badge" id="overtime-badge-<?= $pc['id'] ?>">⚠ OVERTIME</div>
                 <div class="pc-timer timer-running" id="timer-<?= $pc['id'] ?>"
-                     data-start="<?= $startTime ?>" data-unixt="<?= $startTime ? (new DateTime($startTime, new DateTimeZone('Asia/Manila')))->getTimestamp() : '' ?>" data-limit="<?= ($timeLimit && (int)$timeLimit > 0) ? (int)$timeLimit : '' ?>"><?= $initialTimer ?></div>
+                     data-start="<?= $startTime ?>" data-unixt="<?= $startTime ? (new DateTime($startTime, new DateTimeZone('Asia/Manila')))->getTimestamp() : '' ?>" data-limit="<?= ($timeLimit && (int)$timeLimit > 0) ? (int)$timeLimit : '' ?>">--:--:--</div>
                 <div class="cost-display" id="cost-<?= $pc['id'] ?>">₱<?= number_format($cost, 2) ?></div>
                 <div class="action-hint"><i class="fas fa-hand-pointer"></i> Click to end session</div>
             <?php else: ?>
@@ -388,6 +367,10 @@ body{
             <i class="fas fa-stop-circle end-icon"></i>
             <h3 id="endModalTitle">End Session?</h3>
             <p id="endModalSub">This will stop the session and calculate the final cost.</p>
+            <div id="endModalCostBox" style="display:none;background:#f0f4ff;border:2px solid #1e2a78;border-radius:14px;padding:14px 20px;margin-bottom:20px;">
+                <div style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Amount to Collect</div>
+                <div id="endModalCostAmt" style="font-size:30px;font-weight:800;color:#1e2a78;letter-spacing:-0.5px;">₱0.00</div>
+            </div>
             <div class="modal-actions">
                 <button class="btn-stay" onclick="closeEndModal()">Cancel</button>
                 <button class="btn-add-time-switch" id="btnSwitchAddTime" onclick="showAddTimeView()" style="display:none">
@@ -580,7 +563,7 @@ function selectPkg(btn, mins, pkgId) {
                         <div class="pc-name">${pcName}</div>
                         <div class="status-dot"><span class="dot dot-active"></span><span class="text-active">ACTIVE</span></div>
                         <div class="overtime-badge" id="overtime-badge-${pcId}">⚠ OVERTIME</div>
-                        <div class="pc-timer timer-running" id="timer-${pcId}" data-start="${ts}" data-unixt="${data.unixt || ''}" data-limit="${mins > 0 ? mins : ''}"></div>
+                        <div class="pc-timer timer-running" id="timer-${pcId}" data-start="${ts}" data-unixt="${data.unixt || ''}" data-limit="${mins > 0 ? mins : ''}">--:--:--</div>
                         <div class="cost-display" id="cost-${pcId}">₱${data.price ? parseFloat(data.price).toFixed(2) : '0.00'}</div>
                         <div class="action-hint"><i class="fas fa-hand-pointer"></i> Click to end session</div>
                     `;
@@ -668,8 +651,19 @@ function openEndModal(id, name) {
     document.getElementById('endModalSub').textContent   = 'This will stop the session and calculate the final cost.';
     document.getElementById('confirmEndBtn').onclick = () => endSessionNow(id, name);
 
-    // Show "Add Time" button for all active sessions (overtime or not)
-    document.getElementById('btnSwitchAddTime').style.display = 'flex';
+    // Show current cost in modal
+    const costEl = document.getElementById('cost-' + id);
+    const costBox = document.getElementById('endModalCostBox');
+    const costAmt = document.getElementById('endModalCostAmt');
+    if (costEl && costBox && costAmt) {
+        costAmt.textContent = costEl.textContent || '₱0.00';
+        costBox.style.display = 'block';
+    } else if (costBox) {
+        costBox.style.display = 'none';
+    }
+
+    // Show "Add Time" button only when PC is in overtime
+    document.getElementById('btnSwitchAddTime').style.display = isOvertime ? 'flex' : 'none';
 
     showEndView();
     document.getElementById('endModal').classList.add('show');
@@ -764,7 +758,13 @@ function endSessionNow(id, name) {
         .then(r => r.json())
         .then(data => {
             if (data.ok) {
-                showToast('Session ended for ' + name, 'success');
+                const finalCost = (data.cost !== undefined && data.cost !== null)
+                    ? '₱' + parseFloat(data.cost).toFixed(2)
+                    : null;
+                const toastMsg = finalCost
+                    ? 'Session ended for ' + name + ' — Collect ' + finalCost
+                    : 'Session ended for ' + name;
+                showToast(toastMsg, 'success');
                 // Refresh stat counters from server
                 fetch('counter.php')
                     .then(r => r.text())
