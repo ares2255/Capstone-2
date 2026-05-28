@@ -647,8 +647,8 @@ function openEndModal(id, name) {
     document.getElementById('endModalSub').textContent   = 'This will stop the session and calculate the final cost.';
     document.getElementById('confirmEndBtn').onclick = () => endSessionNow(id, name);
 
-    // Show "Add Time" button only when PC is in overtime
-    document.getElementById('btnSwitchAddTime').style.display = isOvertime ? 'flex' : 'none';
+    // Show "Add Time" button for all active sessions (overtime or not)
+    document.getElementById('btnSwitchAddTime').style.display = 'flex';
 
     showEndView();
     document.getElementById('endModal').classList.add('show');
