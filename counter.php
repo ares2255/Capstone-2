@@ -313,7 +313,7 @@ body{
                 <div class="status-dot"><span class="dot dot-active"></span><span class="text-active">ACTIVE</span></div>
                 <div class="overtime-badge" id="overtime-badge-<?= $pc['id'] ?>">⚠ OVERTIME</div>
                 <div class="pc-timer timer-running" id="timer-<?= $pc['id'] ?>"
-                     data-start="<?= $startTime ?>" data-unixt="<?= $startTime ? (new DateTime($startTime, new DateTimeZone('Asia/Manila')))->getTimestamp() : '' ?>" data-limit="<?= $timeLimit ?>">--:--:--</div>
+                     data-start="<?= $startTime ?>" data-unixt="<?= $startTime ? (new DateTime($startTime, new DateTimeZone('Asia/Manila')))->getTimestamp() : '' ?>" data-limit="<?= ($timeLimit && (int)$timeLimit > 0) ? (int)$timeLimit : '' ?>">--:--:--</div>
                 <div class="cost-display" id="cost-<?= $pc['id'] ?>">₱<?= number_format($addcost_override !== null ? $addcost_override : $cost, 2) ?></div>
                 <div class="action-hint"><i class="fas fa-hand-pointer"></i> Click to end session</div>
             <?php else: ?>
