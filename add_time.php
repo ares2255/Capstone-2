@@ -38,15 +38,15 @@ if (isset($_GET['id']) && isset($_GET['mins'])) {
         $new_cost   = $pkgR2 ? (float)$pkgR2['price'] : 0;
         $new_pkg_id = $pkgR2 ? (int)$pkgR2['id'] : null;
 
-        // 4. Start a brand new session
-        $pdo->prepare("INSERT INTO sessions (pc_id, start_time, time_limit, package_id, cost) VALUES (:pc, :st, :tl, :pkg, :c)")
-            ->execute([':pc' => $pc_id, ':st' => $now, ':tl' => $add_mins, ':pkg' => $new_pkg_id, ':c' => $new_cost]);
-
-        // 5. Sum ALL ended sessions for this PC today
+        // 4. Sum previous ended sessions today
         $today = date('Y-m-d');
         $sumQ = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE pc_id=:pc AND DATE(start_time)=:d AND end_time IS NOT NULL");
         $sumQ->execute([':pc' => $pc_id, ':d' => $today]);
         $total_cost = (float)$sumQ->fetchColumn() + $new_cost;
+
+        // 5. Start a brand new session — save combined total as cost so counter shows it
+        $pdo->prepare("INSERT INTO sessions (pc_id, start_time, time_limit, package_id, cost) VALUES (:pc, :st, :tl, :pkg, :c)")
+            ->execute([':pc' => $pc_id, ':st' => $now, ':tl' => $add_mins, ':pkg' => $new_pkg_id, ':c' => $total_cost]);
 
         // 6. DELETE previous transactions for this PC today, insert one combined total
         $pdo->prepare("DELETE FROM transactions WHERE description=:desc AND DATE(time)=:d AND type='Session'")
