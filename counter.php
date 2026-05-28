@@ -662,8 +662,9 @@ function openEndModal(id, name) {
         costBox.style.display = 'none';
     }
 
-    // Show "Add Time" button for any active session
-    document.getElementById('btnSwitchAddTime').style.display = 'flex';
+    // Show "Add Time" button only for package (non-open-time) sessions
+    const isOpenTime = card && card.dataset.isOpen === '1';
+    document.getElementById('btnSwitchAddTime').style.display = isOpenTime ? 'none' : 'flex';
 
     showEndView();
     document.getElementById('endModal').classList.add('show');
