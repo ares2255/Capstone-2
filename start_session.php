@@ -50,11 +50,7 @@ if (isset($_GET['id'])) {
         $price = $settingsRow ? (float)$settingsRow['minimum_charge'] : 0;
     }
 
-    // Add previous ended session costs for combined display (add-time scenarios)
-    $prevQ = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE pc_id=:pc AND DATE(start_time)=CURRENT_DATE AND end_time IS NOT NULL");
-    $prevQ->execute([':pc' => $pc_id]);
-    $display_price = $price + (float)$prevQ->fetchColumn();
-    if ($isAjax) jsonOut(true, ['price' => $display_price, 'start_time' => $start_time, 'unixt' => (new DateTime($start_time, new DateTimeZone('Asia/Manila')))->getTimestamp()]);
+    if ($isAjax) jsonOut(true, ['price' => $price, 'start_time' => $start_time, 'unixt' => (new DateTime($start_time, new DateTimeZone('Asia/Manila')))->getTimestamp()]);
 
     header("Location: counter.php?status=started");
     exit();
