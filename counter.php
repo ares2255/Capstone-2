@@ -417,12 +417,17 @@ document.addEventListener('click', function(e) {
 });
 
 // ── Timers ──
-const _pcTimerIntervals = {}; // track interval IDs by pcId so we can cancel them
+const _pcTimerIntervals = {};
+// Server time offset: correct browser clock vs server clock difference
+const _serverNow = <?= time() ?>; // server unix timestamp at page load
+const _browserNow = Math.floor(Date.now() / 1000);
+const _clockOffset = _serverNow - _browserNow; // positive = server ahead of browser
 
 document.querySelectorAll('[id^="timer-"]').forEach(el => {
     const raw = el.dataset.start;
     if (!raw) return;
-    const start = new Date(raw.replace(' ','T'));
+    const unixt = parseInt(el.dataset.unixt || 0);
+    const start = unixt ? new Date((unixt) * 1000) : new Date(raw.replace(' ','T'));
     const limitMins = el.dataset.limit ? parseInt(el.dataset.limit) : null;
     const pcId = el.id.replace('timer-','');
     const card = document.getElementById('pc-card-' + pcId);
@@ -441,7 +446,10 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
         const liveBadge = document.getElementById('overtime-badge-' + pcId);
         const costEl = document.getElementById('cost-' + pcId);
 
-        const elapsed = Math.floor((Date.now() - start) / 1000);
+        // Use server-corrected current time minus server start time for accurate elapsed
+        const serverCurrentSec = Math.floor(Date.now() / 1000) + _clockOffset;
+        const startSec = unixt ? unixt : Math.floor(start.getTime() / 1000);
+        const elapsed = serverCurrentSec - startSec;
 
         // Update live cost — open time sessions only
         const isOpenTime = liveCard.dataset.isOpen === '1';
@@ -567,7 +575,10 @@ function selectPkg(btn, mins, pkgId) {
                             delete _pcTimerIntervals[pcId];
                             return;
                         }
-                        const elapsed = Math.floor((Date.now() - start) / 1000);
+                        // Use server-corrected current time minus server start time for accurate elapsed
+        const serverCurrentSec = Math.floor(Date.now() / 1000) + _clockOffset;
+        const startSec = unixt ? unixt : Math.floor(start.getTime() / 1000);
+        const elapsed = serverCurrentSec - startSec;
                         const el = document.getElementById('timer-' + pcId);
                         const costEl2 = document.getElementById('cost-' + pcId);
                         if (!el) return;
