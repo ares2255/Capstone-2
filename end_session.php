@@ -34,7 +34,7 @@ try {
     $pc_name = $pc['name'];
 
     // 2. Close ALL open sessions for this PC (fixes duplicate orphan buildup)
-    $openSessions = $pdo->prepare("SELECT id, start_time, time_limit FROM sessions WHERE pc_id = :pc AND end_time IS NULL ORDER BY id DESC");
+    $openSessions = $pdo->prepare("SELECT id, start_time, time_limit, cost FROM sessions WHERE pc_id = :pc AND end_time IS NULL ORDER BY id DESC");
     $openSessions->execute([':pc' => $pc_id]);
     $rows = $openSessions->fetchAll();
 
