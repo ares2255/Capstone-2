@@ -273,11 +273,12 @@ body{
         $isActive = $pc['status'] === 'active';
         $startTime = ''; $timeLimit = null;
         if ($isActive) {
-            $sq = $pdo->prepare("SELECT start_time, time_limit FROM sessions WHERE pc_id=:id AND end_time IS NULL ORDER BY id DESC LIMIT 1");
+            $sq = $pdo->prepare("SELECT start_time, time_limit, cost FROM sessions WHERE pc_id=:id AND end_time IS NULL ORDER BY id DESC LIMIT 1");
             $sq->execute([':id' => $pc['id']]);
             $sr = $sq->fetch();
             $startTime = $sr['start_time'] ?? '';
             $timeLimit = $sr['time_limit'] ?? null;
+            $sessionCost = (float)($sr['cost'] ?? 0);
         }
 
 
@@ -292,6 +293,10 @@ body{
         } elseif ($isActive && !$timeLimit) {
             // Open Time: show minimum charge as starting displayed cost
             $cost = (float)($r['minimum_charge'] ?? 0);
+        }
+        // If session cost includes previous totals (add-time), use it directly
+        if ($isActive && $sessionCost > $cost) {
+            $cost = $sessionCost;
         }
 
 
