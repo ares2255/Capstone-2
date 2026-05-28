@@ -57,7 +57,7 @@ if (isset($_GET['id']) && isset($_GET['mins'])) {
                 ->execute([':desc' => $pc_name, ':amt' => $total_cost, ':t' => $now]);
         }
 
-        header("Location: counter.php?addcost=" . $total_cost . "&addpc=" . $pc_id);
+        header("Location: counter.php");
         exit();
     }
 }
