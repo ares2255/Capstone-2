@@ -31,25 +31,43 @@ if (isset($_GET['id']) && isset($_GET['mins'])) {
         $session_cost = ($row['cost'] !== null) ? (float)$row['cost'] : $current_cost;
         $prev_combined = $session_cost; // this is the total so far including current session
 
-        // 3. End the current session with its own package cost only
+        // 3. Calculate remaining time from the current session (in whole seconds, floor)
+        //    so we carry it forward into the new session's time_limit.
+        $remaining_secs = 0;
+        if ($tl > 0 && !empty($row['start_time'])) {
+            $start_dt  = new DateTime($row['start_time'], new DateTimeZone('Asia/Manila'));
+            $now_dt    = new DateTime($now,               new DateTimeZone('Asia/Manila'));
+            $elapsed_secs = $now_dt->getTimestamp() - $start_dt->getTimestamp();
+            $total_secs   = $tl * 60;
+            $remaining_secs = max(0, $total_secs - $elapsed_secs);
+        }
+        // Convert remaining seconds to whole minutes (round up so the customer
+        // never loses a partial minute they already paid for).
+        $remaining_mins = (int)ceil($remaining_secs / 60);
+
+        // 4. End the current session with its own package cost only
         $pdo->prepare("UPDATE sessions SET end_time=:et, cost=:c WHERE id=:id AND end_time IS NULL")
             ->execute([':et' => $now, ':c' => $current_cost, ':id' => $row['id']]);
 
-        // 4. Get new package price
+        // 5. Get new package price
         $pkgQ2 = $pdo->prepare("SELECT id, price FROM packages WHERE minutes = :m LIMIT 1");
         $pkgQ2->execute([':m' => $add_mins]);
         $pkgR2 = $pkgQ2->fetch();
         $new_cost   = $pkgR2 ? (float)$pkgR2['price'] : 0;
         $new_pkg_id = $pkgR2 ? (int)$pkgR2['id'] : null;
 
-        // 5. Combined total = running chain total + new package
+        // 6. Combined total = running chain total + new package
         $total_cost = $prev_combined + $new_cost;
 
-        // 6. Start new session with combined total as cost
-        $pdo->prepare("INSERT INTO sessions (pc_id, start_time, time_limit, package_id, cost) VALUES (:pc, :st, :tl, :pkg, :c)")
-            ->execute([':pc' => $pc_id, ':st' => $now, ':tl' => $add_mins, ':pkg' => $new_pkg_id, ':c' => $total_cost]);
+        // 7. New time_limit = leftover minutes from current session + added package minutes
+        //    e.g. 20 mins remaining + 60 mins added = 80 mins total on the new session
+        $combined_mins = $remaining_mins + $add_mins;
 
-        // 7. Log combined transaction (delete previous, insert new total)
+        // 8. Start new session with combined time_limit and combined cost
+        $pdo->prepare("INSERT INTO sessions (pc_id, start_time, time_limit, package_id, cost) VALUES (:pc, :st, :tl, :pkg, :c)")
+            ->execute([':pc' => $pc_id, ':st' => $now, ':tl' => $combined_mins, ':pkg' => $new_pkg_id, ':c' => $total_cost]);
+
+        // 9. Log combined transaction (delete previous, insert new total)
         $today = date('Y-m-d');
         $pdo->prepare("DELETE FROM transactions WHERE description=:desc AND DATE(time)=:d AND type='Session'")
             ->execute([':desc' => $pc_name, ':d' => $today]);
