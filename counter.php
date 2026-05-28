@@ -291,6 +291,14 @@ body{
             // Open Time: show minimum charge as starting displayed cost
             $cost = (float)($r['minimum_charge'] ?? 0);
         }
+        // Add previous ended sessions today (add-time scenarios)
+        if ($isActive) {
+            $prevQ = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE pc_id=:pc AND DATE(start_time)=CURRENT_DATE AND end_time IS NOT NULL");
+            $prevQ->execute([':pc' => $pc['id']]);
+            $prev_total = (float)$prevQ->fetchColumn();
+            $cost += $prev_total;
+            $pkg_price += $prev_total;
+        }
     ?>
         <div class="pc-card <?= $isActive ? 'in-use' : 'available' ?>" id="pc-card-<?= $pc['id'] ?>"
              data-pc-id="<?= $pc['id'] ?>"
