@@ -280,8 +280,16 @@ body{
             $timeLimit = $sr['time_limit'] ?? null;
         }
 
-        // Check if this PC just had add-time (passed via URL)
-        $addcost_override = (isset($_GET['addcost']) && isset($_GET['addpc']) && (int)$_GET['addpc'] === (int)$pc['id']) ? (float)$_GET['addcost'] : null;
+        // Check if this PC just had add-time (passed via URL) — only apply if session started within 30s
+        $addcost_override = null;
+        if (isset($_GET['addcost']) && isset($_GET['addpc']) && (int)$_GET['addpc'] === (int)$pc['id'] && $startTime) {
+            $start_dt = new DateTime($startTime, new DateTimeZone('Asia/Manila'));
+            $now_dt   = new DateTime('now', new DateTimeZone('Asia/Manila'));
+            $age = $now_dt->getTimestamp() - $start_dt->getTimestamp();
+            if ($age <= 30) {
+                $addcost_override = (float)$_GET['addcost'];
+            }
+        }
 
         // Pre-calculate cost for display using packages table
         $cost = 0;
