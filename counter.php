@@ -278,7 +278,7 @@ body{
             $sr = $sq->fetch();
             $startTime = $sr['start_time'] ?? '';
             $timeLimit = $sr['time_limit'] ?? null;
-            $sessionCost = (float)($sr['cost'] ?? 0);
+            $sessionCost = isset($sr['cost']) && $sr['cost'] !== null ? (float)$sr['cost'] : null;
         }
 
 
@@ -294,8 +294,9 @@ body{
             // Open Time: show minimum charge as starting displayed cost
             $cost = (float)($r['minimum_charge'] ?? 0);
         }
-        // If session cost includes previous totals (add-time), use it directly
-        if ($isActive && $sessionCost > $cost) {
+        // Only use session cost for display if it was explicitly set (add-time chain)
+        // A fresh session has cost=NULL; add-time sessions have cost=combined total
+        if ($isActive && $sessionCost !== null && $sessionCost > $cost) {
             $cost = $sessionCost;
         }
 
