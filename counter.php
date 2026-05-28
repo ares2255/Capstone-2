@@ -662,8 +662,8 @@ function openEndModal(id, name) {
         costBox.style.display = 'none';
     }
 
-    // Show "Add Time" button only when PC is in overtime
-    document.getElementById('btnSwitchAddTime').style.display = isOvertime ? 'flex' : 'none';
+    // Show "Add Time" button for any active session
+    document.getElementById('btnSwitchAddTime').style.display = 'flex';
 
     showEndView();
     document.getElementById('endModal').classList.add('show');
