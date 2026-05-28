@@ -110,6 +110,7 @@ try {
             $cost = 0;
         }
 
+        $sessionCost = $cost; // default
         // 4. Close ALL open sessions — preserve existing cost if set (add-time chain), else use calculated cost
         foreach ($rows as $i => $r) {
             if ($i === 0) {
@@ -128,18 +129,16 @@ try {
     $pdo->prepare("UPDATE pcs SET status = 'available' WHERE id = :id")
         ->execute([':id' => $pc_id]);
 
-    // 6. Log transaction — sum ALL sessions for this PC today, replace any previous entry
+    // 6. Log transaction — use the session's stored cost (includes combined add-time total)
     try {
-        $today = date('Y-m-d');
-        $sumQ = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE pc_id=:pc AND DATE(start_time)=:d AND end_time IS NOT NULL");
-        $sumQ->execute([':pc' => $pc_id, ':d' => $today]);
-        $total_cost = (float)$sumQ->fetchColumn();
-        if ($total_cost > 0) {
-            // Remove previous transactions for this PC today, log one final total
+        // The session cost field holds the true total (set by add_time.php for chains)
+        $transaction_cost = $sessionCost; // already calculated above with combined total
+        if ($transaction_cost > 0) {
+            $today = date('Y-m-d');
             $pdo->prepare("DELETE FROM transactions WHERE description=:desc AND DATE(time)=:d AND type='Session'")
                 ->execute([':desc' => $pc_name, ':d' => $today]);
             $pdo->prepare("INSERT INTO transactions (type, description, amount, time) VALUES ('Session', :desc, :amt, :t)")
-                ->execute([':desc' => $pc_name, ':amt' => $total_cost, ':t' => $end_time]);
+                ->execute([':desc' => $pc_name, ':amt' => $transaction_cost, ':t' => $end_time]);
         }
     } catch (Exception $e) { /* ignore */ }
 
