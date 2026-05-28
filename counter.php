@@ -280,6 +280,9 @@ body{
             $timeLimit = $sr['time_limit'] ?? null;
         }
 
+        // Check if this PC just had add-time (passed via URL)
+        $addcost_override = (isset($_GET['addcost']) && isset($_GET['addpc']) && (int)$_GET['addpc'] === (int)$pc['id']) ? (float)$_GET['addcost'] : null;
+
         // Pre-calculate cost for display using packages table
         $cost = 0;
         $pkg_price = 0;
@@ -291,16 +294,7 @@ body{
             // Open Time: show minimum charge as starting displayed cost
             $cost = (float)($r['minimum_charge'] ?? 0);
         }
-        // If this is an add-time session (previous session ended within 10 seconds of this one starting), show combined total
-        if ($isActive && $startTime) {
-            $prevQ = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE pc_id=:pc AND DATE(start_time)=CURRENT_DATE AND end_time IS NOT NULL AND end_time >= :st::timestamp - interval '10 seconds'");
-            $prevQ->execute([':pc' => $pc['id'], ':st' => $startTime]);
-            $prev_total = (float)$prevQ->fetchColumn();
-            if ($prev_total > 0) {
-                $cost += $prev_total;
-                $pkg_price += $prev_total;
-            }
-        }
+
 
     ?>
         <div class="pc-card <?= $isActive ? 'in-use' : 'available' ?>" id="pc-card-<?= $pc['id'] ?>"
@@ -320,7 +314,7 @@ body{
                 <div class="overtime-badge" id="overtime-badge-<?= $pc['id'] ?>">⚠ OVERTIME</div>
                 <div class="pc-timer timer-running" id="timer-<?= $pc['id'] ?>"
                      data-start="<?= $startTime ?>" data-unixt="<?= $startTime ? (new DateTime($startTime, new DateTimeZone('Asia/Manila')))->getTimestamp() : '' ?>" data-limit="<?= $timeLimit ?>">--:--:--</div>
-                <div class="cost-display" id="cost-<?= $pc['id'] ?>">₱<?= number_format($cost, 2) ?></div>
+                <div class="cost-display" id="cost-<?= $pc['id'] ?>">₱<?= number_format($addcost_override !== null ? $addcost_override : $cost, 2) ?></div>
                 <div class="action-hint"><i class="fas fa-hand-pointer"></i> Click to end session</div>
             <?php else: ?>
                 <div class="status-dot"><span class="dot dot-avail"></span><span class="text-avail">AVAILABLE</span></div>
