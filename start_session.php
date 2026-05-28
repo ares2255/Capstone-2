@@ -18,37 +18,10 @@ if (isset($_GET['id'])) {
     $check->execute([':id' => $pc_id]);
     $pc = $check->fetch();
 
-    $isOvertime = false;
-    if (!$pc) {
-        if ($isAjax) jsonOut(false, ['msg' => 'pc_not_found']);
-        header("Location: counter.php"); exit();
-    }
-    if ($pc['status'] === 'active') {
-        // Check if overtime — if so, allow adding time by closing current session first
-        $otCheck = $pdo->prepare("SELECT s.id, s.start_time, s.time_limit FROM sessions s WHERE s.pc_id = :id AND s.end_time IS NULL ORDER BY s.id DESC LIMIT 1");
-        $otCheck->execute([':id' => $pc_id]);
-        $curSession = $otCheck->fetch();
-        if ($curSession && !empty($curSession['time_limit']) && (int)$curSession['time_limit'] > 0) {
-            $start_dt = new DateTime($curSession['start_time'], new DateTimeZone('Asia/Manila'));
-            $now_dt   = new DateTime('now', new DateTimeZone('Asia/Manila'));
-            $elapsed_mins = ($now_dt->getTimestamp() - $start_dt->getTimestamp()) / 60;
-            if ($elapsed_mins > (int)$curSession['time_limit']) {
-                $isOvertime = true;
-                // Close overtime session — save cost, will be summed at final end
-                $end_now  = date("Y-m-d H:i:s");
-                $tl       = (int)$curSession['time_limit'];
-                $pkgQ     = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
-                $pkgQ->execute([':m' => $tl]);
-                $pkgR     = $pkgQ->fetch();
-                $ot_cost  = $pkgR ? (float)$pkgR['price'] : 0;
-                $pdo->prepare("UPDATE sessions SET end_time=:et, cost=:c WHERE id=:id AND end_time IS NULL")
-                    ->execute([':et' => $end_now, ':c' => $ot_cost, ':id' => $curSession['id']]);
-            }
-        }
-        if (!$isOvertime) {
-            if ($isAjax) jsonOut(false, ['msg' => 'already_active']);
-            header("Location: counter.php"); exit();
-        }
+    if (!$pc || $pc['status'] === 'active') {
+        if ($isAjax) jsonOut(false, ['msg' => 'already_active']);
+        header("Location: counter.php");
+        exit();
     }
 
     $mins_raw   = (isset($_GET['mins']) && is_numeric($_GET['mins'])) ? abs(intval($_GET['mins'])) : 0;
