@@ -283,6 +283,27 @@ body{
 
 
 
+        // Pre-calculate initial timer display (server-side) so it renders instantly with no flash
+        $initialTimer = '';
+        if ($isActive && $startTime) {
+            $now_ts   = time();
+            $start_ts = (new DateTime($startTime, new DateTimeZone('Asia/Manila')))->getTimestamp();
+            $elapsed  = max(0, $now_ts - $start_ts);
+            $p = fn($n) => str_pad((int)$n, 2, '0', STR_PAD_LEFT);
+            if ($timeLimit && (int)$timeLimit > 0) {
+                $total_secs = (int)$timeLimit * 60;
+                if ($elapsed >= $total_secs) {
+                    $over = $elapsed - $total_secs;
+                    $initialTimer = '+' . $p(floor($over/3600)) . ':' . $p(floor(($over%3600)/60)) . ':' . $p($over%60);
+                } else {
+                    $rem = $total_secs - $elapsed;
+                    $initialTimer = $p(floor($rem/3600)) . ':' . $p(floor(($rem%3600)/60)) . ':' . $p($rem%60);
+                }
+            } else {
+                $initialTimer = $p(floor($elapsed/3600)) . ':' . $p(floor(($elapsed%3600)/60)) . ':' . $p($elapsed%60);
+            }
+        }
+
         // Pre-calculate cost for display using packages table
         $cost = 0;
         $pkg_price = 0;
@@ -318,7 +339,7 @@ body{
                 <div class="status-dot"><span class="dot dot-active"></span><span class="text-active">ACTIVE</span></div>
                 <div class="overtime-badge" id="overtime-badge-<?= $pc['id'] ?>">⚠ OVERTIME</div>
                 <div class="pc-timer timer-running" id="timer-<?= $pc['id'] ?>"
-                     data-start="<?= $startTime ?>" data-unixt="<?= $startTime ? (new DateTime($startTime, new DateTimeZone('Asia/Manila')))->getTimestamp() : '' ?>" data-limit="<?= ($timeLimit && (int)$timeLimit > 0) ? (int)$timeLimit : '' ?>"></div>
+                     data-start="<?= $startTime ?>" data-unixt="<?= $startTime ? (new DateTime($startTime, new DateTimeZone('Asia/Manila')))->getTimestamp() : '' ?>" data-limit="<?= ($timeLimit && (int)$timeLimit > 0) ? (int)$timeLimit : '' ?>"><?= $initialTimer ?></div>
                 <div class="cost-display" id="cost-<?= $pc['id'] ?>">₱<?= number_format($cost, 2) ?></div>
                 <div class="action-hint"><i class="fas fa-hand-pointer"></i> Click to end session</div>
             <?php else: ?>
