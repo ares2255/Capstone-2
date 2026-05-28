@@ -20,7 +20,7 @@ if (isset($_GET['id']) && isset($_GET['mins'])) {
     if ($row) {
         $now = date("Y-m-d H:i:s");
 
-        // 1. Calculate cost of the CURRENT session being closed
+        // 1. Calculate cost of the current session being closed
         $tl = (int)$row['time_limit'];
         $pkgQ = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
         $pkgQ->execute([':m' => $tl]);
@@ -35,25 +35,29 @@ if (isset($_GET['id']) && isset($_GET['mins'])) {
         $pkgQ2 = $pdo->prepare("SELECT id, price FROM packages WHERE minutes = :m LIMIT 1");
         $pkgQ2->execute([':m' => $add_mins]);
         $pkgR2 = $pkgQ2->fetch();
-        $new_cost = $pkgR2 ? (float)$pkgR2['price'] : 0;
+        $new_cost   = $pkgR2 ? (float)$pkgR2['price'] : 0;
         $new_pkg_id = $pkgR2 ? (int)$pkgR2['id'] : null;
 
         // 4. Start a brand new session
         $pdo->prepare("INSERT INTO sessions (pc_id, start_time, time_limit, package_id, cost) VALUES (:pc, :st, :tl, :pkg, :c)")
             ->execute([':pc' => $pc_id, ':st' => $now, ':tl' => $add_mins, ':pkg' => $new_pkg_id, ':c' => $new_cost]);
 
-        // 5. Log combined transaction (previous sessions + new)
+        // 5. Sum ALL ended sessions for this PC today
         $today = date('Y-m-d');
         $sumQ = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE pc_id=:pc AND DATE(start_time)=:d AND end_time IS NOT NULL");
         $sumQ->execute([':pc' => $pc_id, ':d' => $today]);
         $total_cost = (float)$sumQ->fetchColumn() + $new_cost;
+
+        // 6. DELETE previous transactions for this PC today, insert one combined total
+        $pdo->prepare("DELETE FROM transactions WHERE description=:desc AND DATE(time)=:d AND type='Session'")
+            ->execute([':desc' => $pc_name, ':d' => $today]);
 
         if ($total_cost > 0) {
             $pdo->prepare("INSERT INTO transactions (type, description, amount, time) VALUES ('Session', :desc, :amt, :t)")
                 ->execute([':desc' => $pc_name, ':amt' => $total_cost, ':t' => $now]);
         }
 
-        header("Location: counter.php");
+        header("Location: counter.php?addcost=" . $total_cost . "&addpc=" . $pc_id);
         exit();
     }
 }
