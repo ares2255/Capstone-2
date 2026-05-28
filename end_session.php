@@ -111,17 +111,23 @@ try {
         }
 
         $sessionCost = $cost; // default
-        // 4. Close ALL open sessions — preserve existing cost if set (add-time chain), else use calculated cost
+        // 4. Close ALL open sessions
         foreach ($rows as $i => $r) {
             if ($i === 0) {
-                // Only update cost if it is NULL (fresh session), preserve combined total if already set
+                // If session already has a cost saved (add-time chain), keep it — never overwrite
                 $existingCost = ($r['cost'] !== null) ? (float)$r['cost'] : null;
-                $sessionCost = ($existingCost !== null && $existingCost > $cost) ? $existingCost : $cost;
+                $sessionCost = ($existingCost !== null) ? $existingCost : $cost;
+                $pdo->prepare("UPDATE sessions SET end_time = :et WHERE id = :id AND end_time IS NULL")
+                    ->execute([':et' => $end_time, ':id' => $r['id']]);
             } else {
-                $sessionCost = 0;
+                $pdo->prepare("UPDATE sessions SET end_time = :et, cost = 0 WHERE id = :id AND end_time IS NULL")
+                    ->execute([':et' => $end_time, ':id' => $r['id']]);
             }
-            $pdo->prepare("UPDATE sessions SET end_time = :et, cost = :cost WHERE id = :id AND end_time IS NULL")
-                ->execute([':et' => $end_time, ':cost' => $sessionCost, ':id' => $r['id']]);
+        }
+        // Save cost only for fresh sessions (cost was NULL)
+        if ($rows && $rows[0]['cost'] === null) {
+            $pdo->prepare("UPDATE sessions SET cost = :c WHERE id = :id")
+                ->execute([':c' => $cost, ':id' => $rows[0]['id']]);
         }
     }
 
