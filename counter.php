@@ -26,6 +26,7 @@ $active_count = $pdo->query("SELECT COUNT(*) FROM pcs WHERE status='active'")->f
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Q-Solutions | Counter</title>
 <link rel="icon" type="image/jpeg" href="q.jpg">
+<link rel="icon" type="image/jpeg" href="q.jpg">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="includes/navbar.css">
 <script>(function(){if(localStorage.getItem("settings_theme")==="light"){document.documentElement.classList.add("light-mode");}})()</script>
@@ -295,8 +296,10 @@ body{
             $cost = (float)($r['minimum_charge'] ?? 0);
         }
         // Only use session cost for display if it was explicitly set (add-time chain)
-        // A fresh session has cost=NULL; add-time sessions have cost=combined total
-        if ($isActive && $sessionCost !== null && $sessionCost > $cost) {
+        // A fresh session has cost=NULL; add-time sessions have cost=combined total.
+        // Once set, it's the authoritative running total, so always trust it over the
+        // single-package lookup above (which can't reflect a combined/extended limit).
+        if ($isActive && $sessionCost !== null) {
             $cost = $sessionCost;
         }
 
@@ -645,11 +648,17 @@ function selectPkg(btn, mins, pkgId) {
 function openEndModal(id, name) {
     currentPcId = id; currentPcName = name;
     const card = document.getElementById('pc-card-' + id);
-    const isOvertime = card && card.classList.contains('overtime');
+
+    // ── Always reset the button lock when opening for any PC ──
+    const confirmBtn = document.getElementById('confirmEndBtn');
+    confirmBtn._locked  = false;
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'End Session';
+    confirmBtn.style.opacity = '';
 
     document.getElementById('endModalTitle').textContent = 'End session for ' + name + '?';
     document.getElementById('endModalSub').textContent   = 'This will stop the session and calculate the final cost.';
-    document.getElementById('confirmEndBtn').onclick = () => endSessionNow(id, name);
+    confirmBtn.onclick = () => endSessionNow(id, name);
 
     // Show current cost in modal
     const costEl = document.getElementById('cost-' + id);
