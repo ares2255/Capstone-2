@@ -7,58 +7,57 @@ if (isset($_GET['id']) && isset($_GET['mins'])) {
     $pc_id    = intval($_GET['id']);
     $add_mins = intval($_GET['mins']);
 
-    $pc_name_q = $pdo->prepare("SELECT name FROM pcs WHERE id = :id");
-    $pc_name_q->execute([':id' => $pc_id]);
-    $pc_name = $pc_name_q->fetch()['name'] ?? 'PC';
-
+    // Get the active session
     $stmt = $pdo->prepare("SELECT id, time_limit, start_time, cost FROM sessions WHERE pc_id = :pc AND end_time IS NULL ORDER BY id DESC LIMIT 1");
     $stmt->execute([':pc' => $pc_id]);
     $row = $stmt->fetch();
 
     if ($row) {
-        $now = date("Y-m-d H:i:s");
+        $session_id = $row['id'];
+        $old_limit  = (int)($row['time_limit'] ?? 0);
 
-        // 1. Cost of the current session being closed
-        $tl = (int)$row['time_limit'];
-        $pkgQ = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
-        $pkgQ->execute([':m' => $tl]);
-        $pkgR = $pkgQ->fetch();
-        $current_cost = $pkgR ? (float)$pkgR['price'] : 0;
-
-        // 2. Get the running chain total
-        // If session cost is NULL = fresh session, chain total = just its package price
-        // If session cost is set = already a combined total from previous add-time
-        $session_cost = ($row['cost'] !== null) ? (float)$row['cost'] : $current_cost;
-        $prev_combined = $session_cost; // this is the total so far including current session
-
-        // 3. End the current session with its own package cost only
-        $pdo->prepare("UPDATE sessions SET end_time=:et, cost=:c WHERE id=:id AND end_time IS NULL")
-            ->execute([':et' => $now, ':c' => $current_cost, ':id' => $row['id']]);
-
-        // 4. Get new package price
-        $pkgQ2 = $pdo->prepare("SELECT id, price FROM packages WHERE minutes = :m LIMIT 1");
-        $pkgQ2->execute([':m' => $add_mins]);
-        $pkgR2 = $pkgQ2->fetch();
-        $new_cost   = $pkgR2 ? (float)$pkgR2['price'] : 0;
-        $new_pkg_id = $pkgR2 ? (int)$pkgR2['id'] : null;
-
-        // 5. Combined total = running chain total + new package
-        $total_cost = $prev_combined + $new_cost;
-
-        // 6. Start new session with combined total as cost
-        $pdo->prepare("INSERT INTO sessions (pc_id, start_time, time_limit, package_id, cost) VALUES (:pc, :st, :tl, :pkg, :c)")
-            ->execute([':pc' => $pc_id, ':st' => $now, ':tl' => $add_mins, ':pkg' => $new_pkg_id, ':c' => $total_cost]);
-
-        // 7. Log combined transaction (delete previous, insert new total)
-        $today = date('Y-m-d');
-        $pdo->prepare("DELETE FROM transactions WHERE description=:desc AND DATE(time)=:d AND type='Session'")
-            ->execute([':desc' => $pc_name, ':d' => $today]);
-        if ($total_cost > 0) {
-            $pdo->prepare("INSERT INTO transactions (type, description, amount, time) VALUES ('Session', :desc, :amt, :t)")
-                ->execute([':desc' => $pc_name, ':amt' => $total_cost, ':t' => $now]);
+        // How much has already been charged for this session?
+        // If cost was already set (e.g. from a previous Add Time), use it as the running total.
+        // Otherwise, look up the price of the package the session originally started with.
+        if ($row['cost'] !== null) {
+            $old_cost = (float)$row['cost'];
+        } else {
+            $old_cost = 0;
+            if ($old_limit > 0) {
+                $oldPkg = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
+                $oldPkg->execute([':m' => $old_limit]);
+                $oldPkgRow = $oldPkg->fetch();
+                $old_cost = $oldPkgRow ? (float)$oldPkgRow['price'] : 0;
+            }
         }
 
-        header("Location: counter.php");
+        // Price of the newly added package
+        $pkg = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
+        $pkg->execute([':m' => $add_mins]);
+        $pkg_row = $pkg->fetch();
+        $extra_cost = $pkg_row ? (float)$pkg_row['price'] : 0;
+
+        // ── The actual fix ──
+        // Do NOT touch start_time (keep counting from when the session truly began).
+        // EXTEND the time_limit instead of overwriting it.
+        // ADD the new package price to the running cost instead of losing the old amount.
+        $new_limit = $old_limit + $add_mins;
+        $new_cost  = $old_cost + $extra_cost;
+
+        $pdo->prepare("UPDATE sessions SET time_limit = :tl, cost = :cost WHERE id = :id")
+            ->execute([':tl' => $new_limit, ':cost' => $new_cost, ':id' => $session_id]);
+
+        // Log the extra charge as a transaction
+        if ($extra_cost > 0) {
+            $pc_name_q = $pdo->prepare("SELECT name FROM pcs WHERE id = :id");
+            $pc_name_q->execute([':id' => $pc_id]);
+            $pc_name = $pc_name_q->fetch()['name'] ?? 'PC';
+
+            $pdo->prepare("INSERT INTO transactions (type, description, amount, time) VALUES ('Session', :desc, :amt, :t)")
+                ->execute([':desc' => $pc_name . ' (+' . $add_mins . ' min)', ':amt' => $extra_cost, ':t' => date("Y-m-d H:i:s")]);
+        }
+
+        header("Location: counter.php?status=extended&pc=" . urlencode($pc_id));
         exit();
     }
 }
