@@ -142,6 +142,19 @@ input{width:100%;padding:11px;background:rgba(255,255,255,.05);border:1px solid 
             <div class="stat-box"><span class="stat-val"><?= $today_pages ?></span><span class="stat-lbl">Pages Printed</span></div>
         </div>
         <div class="panel-card">
+            <h3 style="color:#38bdf8;margin:0 0 6px;font-size:15px;"><i class="fas fa-copy"></i> New Scan Job</h3>
+            <form action="save_scan.php" method="POST" id="scanForm">
+                <input type="hidden" name="scan_submit_token" id="scan_submit_token" value="<?= bin2hex(random_bytes(16)) ?>">
+                <label>Number of Pages</label>
+                <input type="number" name="scan_pages" id="scan_pages" value="1" min="1" oninput="calculateScanTotal()">
+                <div class="price-preview">
+                    <span style="font-size:13px;color:#8aa0c5;">Calculated Price:</span>
+                    <span class="price-text" id="scan_display_total">₱15.00</span>
+                </div>
+                <button type="submit" class="confirm-btn" id="scanConfirmBtn">Confirm &amp; Save</button>
+            </form>
+        </div>
+        <div class="panel-card" style="margin-top:20px;">
             <h3 style="color:#38bdf8;margin:0 0 6px;font-size:15px;"><i class="fas fa-plus-circle"></i> New Print Job</h3>
             <form action="save_print.php" method="POST" id="printForm">
                 <input type="hidden" name="submit_token" id="submit_token" value="<?= bin2hex(random_bytes(16)) ?>">
@@ -204,12 +217,32 @@ function calculateTotal(){
     const paperRate = currentSize === 'Short' ? shortBondRate : longBondRate;
     document.getElementById('display_total').innerText = '₱' + (pages * (printRate + paperRate)).toFixed(2);
 }
-window.onload = calculateTotal;
+window.addEventListener('load', calculateTotal);
+window.addEventListener('load', calculateScanTotal);
+
+const scanRate = 15;
+function calculateScanTotal(){
+    const pages = parseInt(document.getElementById('scan_pages').value) || 0;
+    document.getElementById('scan_display_total').innerText = '₱' + (pages * scanRate).toFixed(2);
+}
 
 // Prevent double submission
 (function(){
     const form = document.getElementById('printForm');
     const btn  = document.getElementById('confirmBtn');
+    let locked = false;
+    form.addEventListener('submit', function(e){
+        if (locked) { e.preventDefault(); return false; }
+        locked = true;
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+        btn.style.opacity = '0.6';
+    });
+})();
+
+(function(){
+    const form = document.getElementById('scanForm');
+    const btn  = document.getElementById('scanConfirmBtn');
     let locked = false;
     form.addEventListener('submit', function(e){
         if (locked) { e.preventDefault(); return false; }
