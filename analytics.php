@@ -16,16 +16,20 @@ try {
     // Today
     $q = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE DATE(end_time)=:d");
     $q->execute([':d'=>$today]); $today_session = $q->fetchColumn();
-    $q = $pdo->prepare("SELECT COALESCE(SUM(price),0) FROM print_jobs WHERE DATE(created_at)=:d");
+    $q = $pdo->prepare("SELECT COALESCE(SUM(price),0) FROM print_jobs WHERE DATE(created_at)=:d AND type != 'SCAN'");
     $q->execute([':d'=>$today]); $today_print = $q->fetchColumn();
-    $today_total = $today_session + $today_print;
+    $q = $pdo->prepare("SELECT COALESCE(SUM(price),0) FROM print_jobs WHERE DATE(created_at)=:d AND type = 'SCAN'");
+    $q->execute([':d'=>$today]); $today_scan = $q->fetchColumn();
+    $today_total = $today_session + $today_print + $today_scan;
 
     // Yesterday
     $q = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE DATE(end_time)=:d");
     $q->execute([':d'=>$yesterday]); $yest_session = $q->fetchColumn();
-    $q = $pdo->prepare("SELECT COALESCE(SUM(price),0) FROM print_jobs WHERE DATE(created_at)=:d");
+    $q = $pdo->prepare("SELECT COALESCE(SUM(price),0) FROM print_jobs WHERE DATE(created_at)=:d AND type != 'SCAN'");
     $q->execute([':d'=>$yesterday]); $yest_print = $q->fetchColumn();
-    $yest_total = $yest_session + $yest_print;
+    $q = $pdo->prepare("SELECT COALESCE(SUM(price),0) FROM print_jobs WHERE DATE(created_at)=:d AND type = 'SCAN'");
+    $q->execute([':d'=>$yesterday]); $yest_scan = $q->fetchColumn();
+    $yest_total = $yest_session + $yest_print + $yest_scan;
 
     $diff = $today_total - $yest_total;
     $pct = $yest_total > 0 ? round(($diff/$yest_total)*100,1) : 0;
@@ -38,7 +42,8 @@ try {
     $weekly = $pdo->query("
         SELECT ds::date as day,
                COALESCE((SELECT SUM(cost) FROM sessions WHERE DATE(end_time)=ds::date),0) as session_rev,
-               COALESCE((SELECT SUM(price) FROM print_jobs WHERE DATE(created_at)=ds::date),0) as print_rev
+               COALESCE((SELECT SUM(price) FROM print_jobs WHERE DATE(created_at)=ds::date AND type != 'SCAN'),0) as print_rev,
+               COALESCE((SELECT SUM(price) FROM print_jobs WHERE DATE(created_at)=ds::date AND type = 'SCAN'),0) as scan_rev
         FROM generate_series(CURRENT_DATE-INTERVAL '6 days', CURRENT_DATE, '1 day') ds
         ORDER BY day ASC
     ")->fetchAll();
@@ -114,6 +119,18 @@ body{background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);colo
 .compare-item.today-box .amount{color:#2ecc71;}
 .compare-item.yest-box .amount{color:#f1c40f;}
 .vs-divider{display:flex;align-items:center;justify-content:center;color:#4a5f7a;font-size:18px;font-weight:bold;}
+.receipt-btns{display:flex;gap:12px;flex-wrap:wrap;}
+.btn-receipt{
+    flex:1;min-width:140px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.12);
+    color:white;padding:16px 14px;border-radius:12px;
+    cursor:pointer;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    transition:.2s;
+}
+.btn-receipt i{font-size:20px;color:#38bdf8;}
+.btn-receipt:hover{background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.35);transform:translateY(-2px);}
 </style>
 </head>
 <body>
@@ -158,7 +175,7 @@ body{background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);colo
                     <div class="label">Yesterday</div>
                     <div class="amount">₱<?= number_format($yest_total,2) ?></div>
                     <div style="color:#8aa0c5;font-size:12px;margin-top:6px;">
-                        Sessions: ₱<?= number_format($yest_session,2) ?> &nbsp;|&nbsp; Printing: ₱<?= number_format($yest_print,2) ?>
+                        Sessions: ₱<?= number_format($yest_session,2) ?> &nbsp;|&nbsp; Printing: ₱<?= number_format($yest_print,2) ?> &nbsp;|&nbsp; Scanning: ₱<?= number_format($yest_scan,2) ?>
                     </div>
                 </div>
                 <div class="vs-divider">VS</div>
@@ -166,9 +183,22 @@ body{background:linear-gradient(135deg,#0d1117 0%,#1a1a2e 50%,#16213e 100%);colo
                     <div class="label">Today</div>
                     <div class="amount">₱<?= number_format($today_total,2) ?></div>
                     <div style="color:#8aa0c5;font-size:12px;margin-top:6px;">
-                        Sessions: ₱<?= number_format($today_session,2) ?> &nbsp;|&nbsp; Printing: ₱<?= number_format($today_print,2) ?>
+                        Sessions: ₱<?= number_format($today_session,2) ?> &nbsp;|&nbsp; Printing: ₱<?= number_format($today_print,2) ?> &nbsp;|&nbsp; Scanning: ₱<?= number_format($today_scan,2) ?>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Receipt -->
+    <div style="margin-bottom:28px;">
+        <div class="chart-card">
+            <h3><i class="fas fa-receipt"></i> Print Receipt</h3>
+            <p style="color:#8aa0c5;font-size:12px;margin:-10px 0 16px;">Generate a printable sales summary for PC sessions and printing/scanning.</p>
+            <div class="receipt-btns">
+                <button class="btn-receipt" onclick="printReceipt('daily')"><i class="fas fa-calendar-day"></i> Daily</button>
+                <button class="btn-receipt" onclick="printReceipt('weekly')"><i class="fas fa-calendar-week"></i> Weekly</button>
+                <button class="btn-receipt" onclick="printReceipt('monthly')"><i class="fas fa-calendar-alt"></i> Monthly</button>
             </div>
         </div>
     </div>
@@ -218,10 +248,11 @@ new Chart(document.getElementById('weeklyChart'), {
         labels: <?= json_encode(array_map(fn($r)=>date('D m/d',strtotime($r['day'])), $weekly)) ?>,
         datasets: [
             {label:'Sessions',data:<?= json_encode(array_map(fn($r)=>(float)$r['session_rev'],$weekly)) ?>,backgroundColor:'rgba(56,189,248,0.7)',borderRadius:6},
-            {label:'Printing',data:<?= json_encode(array_map(fn($r)=>(float)$r['print_rev'],$weekly)) ?>,backgroundColor:'rgba(168,85,247,0.7)',borderRadius:6}
+            {label:'Printing',data:<?= json_encode(array_map(fn($r)=>(float)$r['print_rev'],$weekly)) ?>,backgroundColor:'rgba(168,85,247,0.7)',borderRadius:6},
+            {label:'Scanning',data:<?= json_encode(array_map(fn($r)=>(float)$r['scan_rev'],$weekly)) ?>,backgroundColor:'rgba(245,158,11,0.7)',borderRadius:6}
         ]
     },
-    options:{responsive:true,plugins:{legend:{labels:{color:'#8aa0c5'}}},scales:{x:{ticks:{color:'#8aa0c5'},grid:{color:chartDefaults.grid}},y:{ticks:{color:'#8aa0c5',callback:v=>'₱'+v},grid:{color:chartDefaults.grid}}}}
+    options:{responsive:true,plugins:{legend:{labels:{color:'#8aa0c5'}}},scales:{x:{ticks:{color:'#8aa0c5'},grid:{color:chartDefaults.grid}},y:{ticks:{color:'#8aa0c5',callback:v=>'₱'+v.toLocaleString()},grid:{color:chartDefaults.grid}}}}
 });
 
 // Monthly Chart
@@ -308,7 +339,15 @@ new Chart(document.getElementById('pcChart'), {
     options:{responsive:true,plugins:{legend:{labels:{color:'#8aa0c5'}}}}
 });
 
+// Print Receipt
+function printReceipt(period) {
+    window.open('print_receipt.php?period=' + period, '_blank', 'width=420,height=700');
+}
+
 // Custom date lookup
+function fmtMoney(n) {
+    return parseFloat(n).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
 function loadDate() {
     const date = document.getElementById('customDate').value;
     if (!date) return;
@@ -317,18 +356,22 @@ function loadDate() {
         .then(r=>r.json())
         .then(d=>{
             document.getElementById('customResult').innerHTML = `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:10px;">
                     <div style="background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:16px;text-align:center;">
                         <div style="color:#8aa0c5;font-size:11px;text-transform:uppercase;margin-bottom:6px;">Sessions</div>
-                        <div style="color:#38bdf8;font-size:20px;font-weight:bold;">₱${parseFloat(d.session).toFixed(2)}</div>
+                        <div style="color:#38bdf8;font-size:20px;font-weight:bold;">₱${fmtMoney(d.session)}</div>
                     </div>
                     <div style="background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);border-radius:10px;padding:16px;text-align:center;">
                         <div style="color:#8aa0c5;font-size:11px;text-transform:uppercase;margin-bottom:6px;">Printing</div>
-                        <div style="color:#a855f7;font-size:20px;font-weight:bold;">₱${parseFloat(d.print).toFixed(2)}</div>
+                        <div style="color:#a855f7;font-size:20px;font-weight:bold;">₱${fmtMoney(d.print)}</div>
+                    </div>
+                    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:16px;text-align:center;">
+                        <div style="color:#8aa0c5;font-size:11px;text-transform:uppercase;margin-bottom:6px;">Scanning</div>
+                        <div style="color:#f59e0b;font-size:20px;font-weight:bold;">₱${fmtMoney(d.scan)}</div>
                     </div>
                     <div style="grid-column:1/-1;background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.2);border-radius:10px;padding:16px;text-align:center;">
                         <div style="color:#8aa0c5;font-size:11px;text-transform:uppercase;margin-bottom:6px;">Total Revenue for ${date}</div>
-                        <div style="color:#2ecc71;font-size:26px;font-weight:bold;">₱${parseFloat(d.total).toFixed(2)}</div>
+                        <div style="color:#2ecc71;font-size:26px;font-weight:bold;">₱${fmtMoney(d.total)}</div>
                     </div>
                 </div>`;
         }).catch(()=>{
