@@ -48,86 +48,56 @@ try {
     $cost = 0;
     if (!empty($rows)) {
         $row = $rows[0]; // most recent
-        try {
-            $rates = $pdo->query("SELECT * FROM settings WHERE id = 1")->fetch();
-            $start_dt      = new DateTime($row['start_time']);
-            $end_dt        = new DateTime($end_time);
-            $diff          = $start_dt->diff($end_dt);
-            $total_seconds = ($diff->days * 86400) + ($diff->h * 3600) + ($diff->i * 60) + $diff->s;
-            $total_minutes = (int)floor($total_seconds / 60); // floor: charge completed minutes only
 
-            if (!empty($row['time_limit']) && (int)$row['time_limit'] > 0) {
-                // Try package_id first (most accurate), fall back to minutes match
-                $pkgRow = null;
-                if (!empty($row['package_id'])) {
-                    $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE id = :id LIMIT 1");
-                    $pkgQuery->execute([':id' => $row['package_id']]);
-                    $pkgRow = $pkgQuery->fetch();
+        // If this session already has an accumulated cost (set by add_time.php when
+        // the customer added extra minutes), trust that running total instead of
+        // recalculating from a single package/hourly lookup — the combined time_limit
+        // (e.g. 90 mins) may not match any single package, which was causing the
+        // price to be recalculated wrong (or reset) when the session ended.
+        if ($row['cost'] !== null) {
+            $cost = (float)$row['cost'];
+        } else {
+            try {
+                $rates = $pdo->query("SELECT * FROM settings WHERE id = 1")->fetch();
+                $start_dt      = new DateTime($row['start_time']);
+                $end_dt        = new DateTime($end_time);
+                $diff          = $start_dt->diff($end_dt);
+                $total_minutes = ($diff->days * 24 * 60) + ($diff->h * 60) + $diff->i;
+
+                if ($row['time_limit']) {
+                    // Try package_id first (most accurate), fall back to minutes match
+                    $pkgRow = null;
+                    if (!empty($row['package_id'])) {
+                        $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE id = :id LIMIT 1");
+                        $pkgQuery->execute([':id' => $row['package_id']]);
+                        $pkgRow = $pkgQuery->fetch();
+                    }
+                    if (!$pkgRow) {
+                        $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m ORDER BY id DESC LIMIT 1");
+                        $pkgQuery->execute([':m' => $row['time_limit']]);
+                        $pkgRow = $pkgQuery->fetch();
+                    }
+                    $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
+                } else {
+                    // Open Time: find the package whose minutes matches total_minutes used, else hourly
+                    $pkgRow = null;
+                    if ($total_minutes > 0) {
+                        $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
+                        $pkgQuery->execute([':m' => $total_minutes]);
+                        $pkgRow = $pkgQuery->fetch();
+                    }
+                    $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
                 }
-                if (!$pkgRow) {
-                    $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m ORDER BY id DESC LIMIT 1");
-                    $pkgQuery->execute([':m' => $row['time_limit']]);
-                    $pkgRow = $pkgQuery->fetch();
-                }
-                $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
-            } else {
-                // Open Time: charge based on which minute mark was just passed
-                // e.g. 1:02 = passed 1-min mark → 1-min package
-                //      2:08 = passed 2-min mark → 2-min package
-                //      3:06 = passed 3-min mark → nearest package <= 3 min
-                $passed_min = max(1, (int)floor($total_seconds / 60));
-
-                // Exact match first, then highest package <= passed_min
-                $pkgQuery = $pdo->prepare("
-                    SELECT price FROM packages
-                    WHERE minutes = :m
-                    LIMIT 1
-                ");
-                $pkgQuery->execute([':m' => $passed_min]);
-                $pkgRow = $pkgQuery->fetch();
-
-                if (!$pkgRow) {
-                    $pkgQuery = $pdo->prepare("
-                        SELECT price FROM packages
-                        WHERE minutes <= :m
-                        ORDER BY minutes DESC
-                        LIMIT 1
-                    ");
-                    $pkgQuery->execute([':m' => $passed_min]);
-                    $pkgRow = $pkgQuery->fetch();
-                }
-
-                // Last fallback: smallest package
-                if (!$pkgRow) {
-                    $pkgQuery = $pdo->prepare("SELECT price FROM packages ORDER BY minutes ASC LIMIT 1");
-                    $pkgQuery->execute();
-                    $pkgRow = $pkgQuery->fetch();
-                }
-
-                $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_seconds / 3600) * ($rates['hourly_rate'] ?? 0));
+            } catch (Exception $e) {
+                $cost = 0;
             }
-        } catch (Exception $e) {
-            $cost = 0;
         }
 
-        $sessionCost = $cost; // default
-        // 4. Close ALL open sessions
+        // 4. Close ALL open sessions — most recent gets the cost, rest get 0
         foreach ($rows as $i => $r) {
-            if ($i === 0) {
-                // If session already has a cost saved (add-time chain), keep it — never overwrite
-                $existingCost = ($r['cost'] !== null) ? (float)$r['cost'] : null;
-                $sessionCost = ($existingCost !== null) ? $existingCost : $cost;
-                $pdo->prepare("UPDATE sessions SET end_time = :et WHERE id = :id AND end_time IS NULL")
-                    ->execute([':et' => $end_time, ':id' => $r['id']]);
-            } else {
-                $pdo->prepare("UPDATE sessions SET end_time = :et, cost = 0 WHERE id = :id AND end_time IS NULL")
-                    ->execute([':et' => $end_time, ':id' => $r['id']]);
-            }
-        }
-        // Save cost only for fresh sessions (cost was NULL)
-        if ($rows && $rows[0]['cost'] === null) {
-            $pdo->prepare("UPDATE sessions SET cost = :c WHERE id = :id")
-                ->execute([':c' => $cost, ':id' => $rows[0]['id']]);
+            $sessionCost = ($i === 0) ? $cost : 0;
+            $pdo->prepare("UPDATE sessions SET end_time = :et, cost = :cost WHERE id = :id AND end_time IS NULL")
+                ->execute([':et' => $end_time, ':cost' => $sessionCost, ':id' => $r['id']]);
         }
     }
 
@@ -135,16 +105,11 @@ try {
     $pdo->prepare("UPDATE pcs SET status = 'available' WHERE id = :id")
         ->execute([':id' => $pc_id]);
 
-    // 6. Log transaction — use the session's stored cost (includes combined add-time total)
+    // 6. Log transaction — non-critical
     try {
-        // The session cost field holds the true total (set by add_time.php for chains)
-        $transaction_cost = $sessionCost; // already calculated above with combined total
-        if ($transaction_cost > 0) {
-            $today = date('Y-m-d');
-            $pdo->prepare("DELETE FROM transactions WHERE description=:desc AND DATE(time)=:d AND type='Session'")
-                ->execute([':desc' => $pc_name, ':d' => $today]);
+        if ($cost > 0) {
             $pdo->prepare("INSERT INTO transactions (type, description, amount, time) VALUES ('Session', :desc, :amt, :t)")
-                ->execute([':desc' => $pc_name, ':amt' => $transaction_cost, ':t' => $end_time]);
+                ->execute([':desc' => $pc_name, ':amt' => $cost, ':t' => $end_time]);
         }
     } catch (Exception $e) { /* ignore */ }
 
