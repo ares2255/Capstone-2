@@ -34,7 +34,7 @@ try {
     $pc_name = $pc['name'];
 
     // 2. Close ALL open sessions for this PC (fixes duplicate orphan buildup)
-    $openSessions = $pdo->prepare("SELECT id, start_time, time_limit, cost FROM sessions WHERE pc_id = :pc AND end_time IS NULL ORDER BY id DESC");
+    $openSessions = $pdo->prepare("SELECT id, start_time, time_limit FROM sessions WHERE pc_id = :pc AND end_time IS NULL ORDER BY id DESC");
     $openSessions->execute([':pc' => $pc_id]);
     $rows = $openSessions->fetchAll();
 
@@ -48,49 +48,55 @@ try {
     $cost = 0;
     if (!empty($rows)) {
         $row = $rows[0]; // most recent
+        try {
+            $rates = $pdo->query("SELECT * FROM settings WHERE id = 1")->fetch();
+            $start_dt      = new DateTime($row['start_time']);
+            $end_dt        = new DateTime($end_time);
+            $diff          = $start_dt->diff($end_dt);
+            $total_minutes = ($diff->days * 24 * 60) + ($diff->h * 60) + $diff->i;
 
-        // If this session already has an accumulated cost (set by add_time.php when
-        // the customer added extra minutes), trust that running total instead of
-        // recalculating from a single package/hourly lookup — the combined time_limit
-        // (e.g. 90 mins) may not match any single package, which was causing the
-        // price to be recalculated wrong (or reset) when the session ended.
-        if ($row['cost'] !== null) {
-            $cost = (float)$row['cost'];
-        } else {
-            try {
-                $rates = $pdo->query("SELECT * FROM settings WHERE id = 1")->fetch();
-                $start_dt      = new DateTime($row['start_time']);
-                $end_dt        = new DateTime($end_time);
-                $diff          = $start_dt->diff($end_dt);
-                $total_minutes = ($diff->days * 24 * 60) + ($diff->h * 60) + $diff->i;
-
-                if ($row['time_limit']) {
-                    // Try package_id first (most accurate), fall back to minutes match
-                    $pkgRow = null;
-                    if (!empty($row['package_id'])) {
-                        $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE id = :id LIMIT 1");
-                        $pkgQuery->execute([':id' => $row['package_id']]);
-                        $pkgRow = $pkgQuery->fetch();
-                    }
-                    if (!$pkgRow) {
-                        $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m ORDER BY id DESC LIMIT 1");
-                        $pkgQuery->execute([':m' => $row['time_limit']]);
-                        $pkgRow = $pkgQuery->fetch();
-                    }
-                    $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
-                } else {
-                    // Open Time: find the package whose minutes matches total_minutes used, else hourly
-                    $pkgRow = null;
-                    if ($total_minutes > 0) {
-                        $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m LIMIT 1");
-                        $pkgQuery->execute([':m' => $total_minutes]);
-                        $pkgRow = $pkgQuery->fetch();
-                    }
-                    $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
+            if ($row['time_limit']) {
+                // Try package_id first (most accurate), fall back to minutes match
+                $pkgRow = null;
+                if (!empty($row['package_id'])) {
+                    $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE id = :id LIMIT 1");
+                    $pkgQuery->execute([':id' => $row['package_id']]);
+                    $pkgRow = $pkgQuery->fetch();
                 }
-            } catch (Exception $e) {
-                $cost = 0;
+                if (!$pkgRow) {
+                    $pkgQuery = $pdo->prepare("SELECT price FROM packages WHERE minutes = :m ORDER BY id DESC LIMIT 1");
+                    $pkgQuery->execute([':m' => $row['time_limit']]);
+                    $pkgRow = $pkgQuery->fetch();
+                }
+                $cost = $pkgRow ? $pkgRow['price'] : max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
+            } else {
+                // Open Time: staircase pricing using the dedicated open_time_rates table
+                // (separate from `packages`, which is only for the fixed-hour Start Session
+                // buttons). Matches the live estimate shown on counter.php.
+                $otRates = $pdo->query("SELECT minutes, price FROM open_time_rates ORDER BY minutes ASC")->fetchAll();
+
+                $cost = null;
+                if (!empty($otRates)) {
+                    // Highest tier whose minute threshold has already been reached
+                    $passedTiers = array_values(array_filter($otRates, function ($t) use ($total_minutes) {
+                        return (int)$t['minutes'] <= $total_minutes;
+                    }));
+
+                    if (!empty($passedTiers)) {
+                        $cost = (float)end($passedTiers)['price'];
+                    } else {
+                        // Hasn't reached the first tier's threshold yet -> not billable yet
+                        $cost = 0.0;
+                    }
+                }
+
+                if ($cost === null) {
+                    // No open time rates configured at all -> fall back to hourly rate / minimum charge
+                    $cost = max($rates['minimum_charge'] ?? 0, ($total_minutes / 60) * ($rates['hourly_rate'] ?? 0));
+                }
             }
+        } catch (Exception $e) {
+            $cost = 0;
         }
 
         // 4. Close ALL open sessions — most recent gets the cost, rest get 0
