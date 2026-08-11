@@ -15,6 +15,7 @@ $rates       = $pdo->query("SELECT * FROM settings WHERE id=1")->fetch();
 $existingPCs = $pdo->query("SELECT name FROM pcs")->fetchAll(PDO::FETCH_COLUMN);
 $allPCs      = $pdo->query("SELECT id, name FROM pcs ORDER BY name ASC")->fetchAll();
 $packages    = $pdo->query("SELECT * FROM packages ORDER BY minutes ASC")->fetchAll();
+$openTimeRates = $pdo->query("SELECT * FROM open_time_rates ORDER BY minutes ASC")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -164,6 +165,82 @@ select option:disabled{color:#4a5f7a;}
             <?php endif; ?>
         </div>
 
+        <!-- ── Open Time Rates ── -->
+        <div class="card" style="min-width:480px;flex:2;">
+            <h3><i class="fas fa-stopwatch"></i> Open Time Rates
+                <span style="margin-left:auto;font-size:11px;color:#4a5f7a;font-weight:400;"><?= count($openTimeRates) ?> bracket(s)</span>
+            </h3>
+            <p style="font-size:12px;color:#8aa0c5;margin:-4px 0 14px;">
+                Separate from Time Packages above — this is only used to price Open Time sessions as elapsed time passes each bracket.
+                Each row is the elapsed-time mark where a new price kicks in.
+            </p>
+
+            <!-- Add form -->
+            <form action="save_open_time_rates.php" method="POST" onsubmit="return submitOtr(this)">
+                <input type="hidden" name="action" value="add">
+                <div class="pkg-add-row">
+                    <div>
+                        <label>Hours</label>
+                        <input type="number" name="hours" min="0" max="23" value="0" placeholder="0">
+                    </div>
+                    <div>
+                        <label>Minutes</label>
+                        <input type="number" name="mins" min="0" max="59" value="0" placeholder="0">
+                    </div>
+                    <div>
+                        <label>Price (&#8369;)</label>
+                        <input type="number" name="price" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                    <button type="submit" class="btn-add"><i class="fas fa-plus"></i> Add</button>
+                </div>
+            </form>
+
+            <!-- Rates list -->
+            <?php if(count($openTimeRates) > 0): ?>
+            <table class="pkg-table">
+                <thead>
+                    <tr>
+                        <th>Starts At</th>
+                        <th>Applies Until</th>
+                        <th>Price</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach($openTimeRates as $idx => $t):
+                    $fmt = function($m) {
+                        $h = intdiv($m, 60); $mm = $m % 60;
+                        if ($h > 0 && $mm > 0) return "{$h}hr {$mm}min";
+                        if ($h > 0) return "{$h}hr";
+                        return "{$mm}min";
+                    };
+                    $startLabel = $fmt((int)$t['minutes']);
+                    $nextRow = $openTimeRates[$idx + 1] ?? null;
+                    $untilLabel = $nextRow ? $fmt((int)$nextRow['minutes'] - 1) : 'and beyond';
+                ?>
+                <tr>
+                    <td><span class="pkg-badge"><?= htmlspecialchars($startLabel) ?></span></td>
+                    <td class="pkg-mins"><?= htmlspecialchars($untilLabel) ?></td>
+                    <td class="pkg-price">&#8369;<?= number_format($t['price'], 2) ?></td>
+                    <td>
+                        <form action="save_open_time_rates.php" method="POST" style="margin:0;" onsubmit="var b=this.querySelector('.btn-pkg-del');b.disabled=true;b.innerHTML='Removing...';">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="id" value="<?= $t['id'] ?>">
+                            <button type="submit" class="btn-pkg-del"><i class="fas fa-trash"></i> Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php else: ?>
+                <div class="pkg-empty">
+                    <i class="fas fa-box-open" style="font-size:28px;display:block;margin-bottom:10px;color:#38bdf8;opacity:.4;"></i>
+                    No open time rates yet. Add your first bracket above.
+                </div>
+            <?php endif; ?>
+        </div>
+
         <div style="display:flex;flex-direction:column;gap:20px;flex:1;min-width:280px;">
             <!-- ── Other Rates ── -->
             <div class="card">
@@ -172,6 +249,7 @@ select option:disabled{color:#4a5f7a;}
                     <div class="input-grid">
                         <div class="input-group"><label>Short Bond (&#8369;)</label><input type="number" step="0.01" name="short_bond_rate" value="<?= $rates['short_bond_rate'] ?? '' ?>"></div>
                         <div class="input-group"><label>Long Bond (&#8369;)</label><input type="number" step="0.01" name="long_bond_rate" value="<?= $rates['long_bond_rate'] ?? '' ?>"></div>
+                        <div class="input-group"><label>A4 (&#8369;)</label><input type="number" step="0.01" name="a4_rate" value="<?= $rates['a4_rate'] ?? '' ?>"></div>
                         <div class="input-group"><label>B&amp;W Print (&#8369;)</label><input type="number" step="0.01" name="bw_rate" value="<?= $rates['bw_rate'] ?? '' ?>"></div>
                         <div class="input-group"><label>Color Print (&#8369;)</label><input type="number" step="0.01" name="color_rate" value="<?= $rates['color_rate'] ?? '' ?>"></div>
                     </div>
@@ -236,6 +314,15 @@ var _pkgSubmitting = false;
 function submitPkg(form){
     if(_pkgSubmitting) return false;
     _pkgSubmitting = true;
+    var b = form.querySelector('.btn-add');
+    b.disabled = true;
+    b.textContent = 'Adding...';
+    return true;
+}
+var _otrSubmitting = false;
+function submitOtr(form){
+    if(_otrSubmitting) return false;
+    _otrSubmitting = true;
     var b = form.querySelector('.btn-add');
     b.disabled = true;
     b.textContent = 'Adding...';
