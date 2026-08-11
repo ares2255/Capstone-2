@@ -14,6 +14,7 @@ $display_user = $is_admin ? $_SESSION['admin_username'] : $_SESSION['username'];
 $pcs   = $pdo->query("SELECT * FROM pcs ORDER BY name ASC")->fetchAll();
 $r     = $pdo->query("SELECT * FROM settings WHERE id=1")->fetch();
 $packages = $pdo->query("SELECT * FROM packages ORDER BY minutes ASC")->fetchAll();
+$openTimeRates = $pdo->query("SELECT minutes, price FROM open_time_rates ORDER BY minutes ASC")->fetchAll();
 $today = date('Y-m-d');
 
 $rev        = $pdo->prepare("SELECT COALESCE(SUM(cost),0) FROM sessions WHERE DATE(start_time)=:d"); $rev->execute([':d'=>$today]); $rev = $rev->fetchColumn();
@@ -292,8 +293,20 @@ body{
                 if((int)$pkg['minutes'] === (int)$timeLimit) { $cost = $pkg['price']; $pkg_price = $pkg['price']; break; }
             }
         } elseif ($isActive && !$timeLimit) {
-            // Open Time: show minimum charge as starting displayed cost
-            $cost = (float)($r['minimum_charge'] ?? 0);
+            // Open Time: compute the same way the live JS timer does — snap to the
+            // highest open_time_rates bracket whose minute mark has actually been
+            // passed, or ₱0 if the customer hasn't reached the first bracket yet.
+            $cost = 0;
+            if ($startTime) {
+                $elapsedMin = floor((time() - (new DateTime($startTime, new DateTimeZone('Asia/Manila')))->getTimestamp()) / 60);
+                $bestPrice = null;
+                foreach ($openTimeRates as $t) {
+                    if ((int)$t['minutes'] <= $elapsedMin) {
+                        $bestPrice = (float)$t['price'];
+                    }
+                }
+                $cost = $bestPrice ?? 0;
+            }
         }
         // Only use session cost for display if it was explicitly set (add-time chain)
         // A fresh session has cost=NULL; add-time sessions have cost=combined total.
@@ -408,6 +421,7 @@ body{
 
 <script>
 const _packages = <?= json_encode(array_map(fn($p) => ['minutes' => (int)$p['minutes'], 'price' => (float)$p['price']], $packages)) ?>;
+const _openTimeRates = <?= json_encode(array_map(fn($t) => ['minutes' => (int)$t['minutes'], 'price' => (float)$t['price']], $openTimeRates)) ?>;
 let currentPcId = null;
 let currentPcName = null;
 let selectedMins = null;
@@ -461,21 +475,21 @@ document.querySelectorAll('[id^="timer-"]').forEach(el => {
         // Update live cost — open time sessions only
         const isOpenTime = liveCard.dataset.isOpen === '1';
         if (costEl && isOpenTime) {
-            const hourly = parseFloat(liveCard.dataset.hourly || 15);
             const minCharge = parseFloat(liveCard.dataset.minCharge || 5);
             // Which minute mark just passed? floor(elapsed/60), min 1
             const passedMin = Math.max(1, Math.floor(elapsed / 60));
             let liveCost;
-            const exactPkg = _packages.find(p => p.minutes === passedMin);
-            if (exactPkg) {
-                liveCost = exactPkg.price;
+            const exactRate = _openTimeRates.find(t => t.minutes === passedMin);
+            if (exactRate) {
+                liveCost = exactRate.price;
             } else {
-                // No exact match - highest package below passedMin
-                const lower = _packages.filter(p => p.minutes < passedMin);
+                // No exact match - highest bracket below passedMin
+                const lower = _openTimeRates.filter(t => t.minutes < passedMin);
                 if (lower.length > 0) {
                     liveCost = lower[lower.length - 1].price;
                 } else {
-                    liveCost = _packages.length > 0 ? _packages[0].price : minCharge;
+                    // Hasn't reached the first bracket's time yet — no charge
+                    liveCost = 0;
                 }
             }
             costEl.textContent = '₱' + liveCost.toFixed(2);
@@ -592,16 +606,15 @@ function selectPkg(btn, mins, pkgId) {
 
                         // Update live cost for open time sessions
                         if (costEl2 && !limitMins) {
-                            const hourly2 = parseFloat(liveCard.dataset.hourly || 15);
-                            const minCharge2 = parseFloat(liveCard.dataset.minCharge || 5);
                             const passedMin2 = Math.max(1, Math.floor(elapsed / 60));
-                            const exactPkg2 = _packages.find(p => p.minutes === passedMin2);
+                            const exactRate2 = _openTimeRates.find(t => t.minutes === passedMin2);
                             let liveCost2;
-                            if (exactPkg2) {
-                                liveCost2 = exactPkg2.price;
+                            if (exactRate2) {
+                                liveCost2 = exactRate2.price;
                             } else {
-                                const lower2 = _packages.filter(p => p.minutes < passedMin2);
-                                liveCost2 = lower2.length > 0 ? lower2[lower2.length - 1].price : (_packages.length > 0 ? _packages[0].price : minCharge2);
+                                const lower2 = _openTimeRates.filter(t => t.minutes < passedMin2);
+                                // Hasn't reached the first bracket's time yet — no charge
+                                liveCost2 = lower2.length > 0 ? lower2[lower2.length - 1].price : 0;
                             }
                             costEl2.textContent = '₱' + liveCost2.toFixed(2);
                         }
